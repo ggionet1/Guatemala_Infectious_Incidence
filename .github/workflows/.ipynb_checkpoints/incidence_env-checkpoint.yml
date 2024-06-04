@@ -1,0 +1,6 @@
+name: incidence_env
+channels:
+  - nodefaults
+dependencies:
+  - r-janitor
+  - r-tidyverse

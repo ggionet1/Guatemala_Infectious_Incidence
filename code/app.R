@@ -77,7 +77,7 @@ server <- function(input, output) {
   # Reactive expression to filter data based on selected disease and date range
   filtered_data <- reactive({
     # Load dataframe
-    data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/influenza_summary.csv")
+    data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
 
     # Filter data based on selected date range
     subset(data, epiweek_recolec >= input$date_range_input_tab1[1] & 
