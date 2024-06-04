@@ -1,0 +1,19 @@
+name: Update data weekly Monday 9am EST
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+on: 
+    push:
+        branches: [ main ]
+
+jobs:
+    run_update_data:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            env:
+              influenza_token: ${{ secrets.influenza_token }}
+              namru_biofire_token: ${{ secrets.namru_biofire_token }}
+              agri_casa_token: ${{ secrets.agri_casa_token }}
+            - run: |
+                r code/redcap_data_processing.R
