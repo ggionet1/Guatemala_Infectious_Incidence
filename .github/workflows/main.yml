@@ -1,8 +1,7 @@
 name: Update data weekly Monday 9am EST
 on:
-  schedule:
-    - cron: "0 13 * * 1"
-on: 
+    schedule:
+        - cron: "0 13 * * 1"
     push:
         branches: [ main ]
 
