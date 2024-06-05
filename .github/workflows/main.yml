@@ -18,12 +18,8 @@ jobs:
           namru_biofire_token: ${{ secrets.namru_biofire_token }}
           agri_casa_token: ${{ secrets.agri_casa_token }}
       - name: Run data processing script
+          with:
+              environment-file: .github/R_env.yml
+              environment-name: R_env
         run: |
-            Rscript -e 'install.packages("usethis",repos = "http://cran.us.r-project.org")'
-            Rscript -e 'install.packages("REDCapR",repos = "http://cran.us.r-project.org")'
-            Rscript -e 'install.packages("ggplot2",repos = "http://cran.us.r-project.org")'
-            Rscript -e 'install.packages("lubridate",repos = "http://cran.us.r-project.org")'
-            Rscript -e 'install.packages("purrr",repos = "http://cran.us.r-project.org")'
-            Rscript -e 'install.packages("ggrepel",repos = "http://cran.us.r-project.org")'
-            Rscript -e 'install.packages("dplyr",repos = "http://cran.us.r-project.org")'
             Rscript code/redcap_data_processing.R
