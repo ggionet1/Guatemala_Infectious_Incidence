@@ -11,15 +11,16 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - name: Checkout code
+      - name: Get tokens
         uses: actions/checkout@v2
         env:
           influenza_token: ${{ secrets.influenza_token }}
           namru_biofire_token: ${{ secrets.namru_biofire_token }}
           agri_casa_token: ${{ secrets.agri_casa_token }}
       - name: Run data processing script
-          with:
-              environment-file: .github/R_env.yml
-              environment-name: R_env
+        uses: actions/checkout@v2
+        with:
+          environment-file: .github/R_env.yml
+          environment-name: R_env
         run: |
-            Rscript code/redcap_data_processing.R
+          Rscript code/redcap_data_processing.R
