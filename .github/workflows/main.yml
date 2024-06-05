@@ -17,9 +17,12 @@ jobs:
           influenza_token: ${{ secrets.influenza_token }}
           namru_biofire_token: ${{ secrets.namru_biofire_token }}
           agri_casa_token: ${{ secrets.agri_casa_token }}
-      - name: Run data processing script
+      - name: Set up R environment
+        uses: r-lib/actions/setup-r@v1
         with:
-          environment-file: .github/R_env.yml
-          environment-name: R_env
-        run: |
-          Rscript code/redcap_data_processing.R
+          r-version: 4.x
+          cache: 'renv'
+      - name: Restore R environment
+        run: Rscript -e 'renv::restore()'
+      - name: Run data processing script
+        run: Rscript code/redcap_data_processing.R
