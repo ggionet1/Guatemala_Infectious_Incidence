@@ -15,4 +15,4 @@ jobs:
               namru_biofire_token: ${{ secrets.namru_biofire_token }}
               agri_casa_token: ${{ secrets.agri_casa_token }}
             - run: |
-                r code/redcap_data_processing.R
+                Rscript code/redcap_data_processing.R
