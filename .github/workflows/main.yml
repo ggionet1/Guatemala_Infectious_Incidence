@@ -18,7 +18,6 @@ jobs:
           namru_biofire_token: ${{ secrets.namru_biofire_token }}
           agri_casa_token: ${{ secrets.agri_casa_token }}
       - name: Run data processing script
-        uses: actions/checkout@v2
         with:
           environment-file: .github/R_env.yml
           environment-name: R_env
