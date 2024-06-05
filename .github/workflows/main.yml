@@ -19,4 +19,12 @@ jobs:
           agri_casa_token: ${{ secrets.agri_casa_token }}
       - name: Run data processing script
         run: |
-          Rscript code/redcap_data_processing.R
+            Rscript -e 'install.packages("remotes")'
+            Rscript -e 'install.packages("usethis")'
+            Rscript -e 'install.packages("REDCapR")'
+            Rscript -e 'install.packages("ggplot2")'
+            Rscript -e 'install.packages("lubridate")'
+            Rscript -e 'install.packages("purrr")'
+            Rscript -e 'install.packages("ggrepel")'
+            Rscript -e 'install.packages("dplyr")'
+            Rscript code/redcap_data_processing.R
