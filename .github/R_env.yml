@@ -1,0 +1,12 @@
+name: R_env
+dependencies:
+  - r-janitor
+  - r-tidyverse
+  - r-remotes
+  - r-usethis
+  - r-REDcapR
+  - r-ggplot2
+  - r-lubridate
+  - r-purrr
+  - r-ggrepel
+  - r-dplyr
