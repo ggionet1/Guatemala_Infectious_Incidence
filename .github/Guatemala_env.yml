@@ -15,3 +15,5 @@ dependencies:
   - r-purrr
   - r-ggrepel
   - r-dplyr
+  - r-shiny
+  - r-bslib
