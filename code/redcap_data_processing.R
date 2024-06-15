@@ -16,8 +16,8 @@ library(dplyr)
 
 # Load Data --------------------------------------------
 
-readRenviron("~/.Renviron")
 agri_casa_token <- Sys.getenv("agri_casa_token")
+print(agri_casa_token)
 namru_biofire_token <- Sys.getenv("namru_biofire_token")
 influenza_token <- Sys.getenv("influenza_token")
 
