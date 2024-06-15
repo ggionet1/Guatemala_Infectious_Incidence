@@ -5,6 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - r-base=4.2.2
+  - r-rsconnect
   - r-janitor
   - r-tidyverse
   - r-remotes
