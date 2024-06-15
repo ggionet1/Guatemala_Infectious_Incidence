@@ -12,7 +12,7 @@ rsconnect::setAccountInfo(name='cutrifinio', token='C0BFCA28C1FE0F83CB5E67B30FA0
 
 # Deploy app
 #rsconnect::deployApp('code/app.R')
-shinylive::export(appdir = "code/", destdir = "docs/app/")
+shinylive::export(appdir = "code/", destdir = "docs/")
 
 # Run app from server
 httpuv::runStaticServer("docs/app/", port=8008)
