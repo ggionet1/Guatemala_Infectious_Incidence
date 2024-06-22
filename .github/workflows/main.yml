@@ -20,8 +20,8 @@ jobs:
           environment-name: Guatemala_env
       - name: Run R file
         env:
-          influenza_token: ${{ secrets.influenza_token }}
-          namru_biofire_token: ${{ secrets.namru_biofire_token }}
-          agri_casa_token: ${{ secrets.agri_casa_token }}
+          influenza_token: ${{ secrets.INFLUENZA_TOKEN }}
+          namru_biofire_token: ${{ secrets.NAMRU_BIOFIRE_TOKEN }}
+          agri_casa_token: ${{ secrets.AGRI_CASA_TOKEN }}
         run: |
           Rscript code/redcap_data_processing.R
