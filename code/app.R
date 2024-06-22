@@ -1,5 +1,7 @@
-library(shiny)
+#library(shiny)
 library(bslib)
+library(ggplot2)
+library(ggrepel)
 
 # Define UI for random distribution app ----
 # Sidebar layout with input and output definitions ----
