@@ -1,18 +1,24 @@
+# ---------------------------------------------------------
+# Using shinyapp.io
 library(rsconnect)
-library(shinylive)
-library(httpuv)
 
-<<<<<<< Updated upstream
-getwd()
-
-=======
->>>>>>> Stashed changes
-# Connect the r script below to an R shiny app
+# Connect the r script below to an R shiny account
 rsconnect::setAccountInfo(name='cutrifinio', token='C0BFCA28C1FE0F83CB5E67B30FA01E0E', secret='b6lWE/Jk2CFw+J5Vu6F3zXxgyk/AsEu9iuVcBGxG')
 
 # Deploy app
-#rsconnect::deployApp('code/app.R')
-shinylive::export(appdir = "code/", destdir = "docs/")
+rsconnect::deployApp('code/')
+
+# ----------------------------------------------------------
+# Using Github (extremely slow)
+
+#library(shinylive)
+#library(httpuv)
+
+# Deploy app
+# rsconnect::deployApp('code/app.R')
+# shinylive::export(appdir = "code/", destdir = "docs/")
 
 # Run app from server
-httpuv::runStaticServer("docs/app/", port=8008)
+# httpuv::runStaticServer("docs/app/", port=8008)
+
+# If do this option, need to go to github repository --> settings --> pages (left side of page) --> check deployment out of the main branch and docs/ folder. app.R must be in "code/" to work.
