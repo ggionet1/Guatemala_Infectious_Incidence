@@ -23,5 +23,7 @@ jobs:
           influenza_token: ${{ secrets.INFLUENZA_TOKEN }}
           namru_biofire_token: ${{ secrets.NAMRU_BIOFIRE_TOKEN }}
           agri_casa_token: ${{ secrets.AGRI_CASA_TOKEN }}
+          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
         run: |
           Rscript code/redcap_data_processing.R
+          Rscript code/deploy_app.R

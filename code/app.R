@@ -1,4 +1,4 @@
-#library(shiny)
+library(shiny)
 library(bslib)
 library(ggplot2)
 library(ggrepel)
@@ -31,15 +31,45 @@ ui_tab1 <- function() {
 }
 
 
+
 # Define UI for Tab 2
 ui_tab2 <- function() {
-  fluidRow(
-    column(12,
-           # Customize the UI for Tab 2 here
-           tags$h2("Custom UI for Tab 2"),
-           # Add UI elements specific to Tab 2
-           sliderInput("slider_input_tab2", "Slider Input", min = 0, max = 100, value = 50),
-           selectInput("select_input_tab2", "Select Input", choices = c("Option 1", "Option 2", "Option 3"))
+  fluidPage(
+    titlePanel("Síntomas nuevas por semana"),
+    
+    sidebarLayout(
+      sidebarPanel(
+        selectInput(
+          "columns_selected",
+          "Elige sintomas:",
+          choices = c("Tos" = "sintomas_nuevos_nuevos___1",
+                      "Dolor de garganta" = "sintomas_nuevos_nuevos___2",
+                      "Dolor de cabeza" = "sintomas_nuevos_nuevos___3",
+                      "Congestion nasal" = "sintomas_nuevos_nuevos___4",
+                      "Fiebre" = "sintomas_nuevos_nuevos___5",
+                      "Dolor de cuerpo/músculos" = "sintomas_nuevos_nuevos___6",
+                      "Fatiga" = "sintomas_nuevos_nuevos___7",
+                      "Vómitos" = "sintomas_nuevos_nuevos___8",
+                      "Diarrea" = "sintomas_nuevos_nuevos___9",
+                      "Dificultad para respirar" = "sintomas_nuevos_nuevos___10",
+                      "Pérdida de olfato o del gusto" = "sintomas_nuevos_nuevos___11",
+                      "Nausea" = "sintomas_nuevos_nuevos___12",
+                      "Sibilancias" = "sintomas_nuevos_nuevos___13",
+                      "Mala alimentación" = "sintomas_nuevos_nuevos___14",
+                      "Letargo" = "sintomas_nuevos_nuevos___15"),
+          selected = NULL,
+          multiple = TRUE
+        ),
+        dateRangeInput(
+          "date_range_input_tab2",
+          "Filtra período del tiempo:",
+          start = min(agri_casa_summary$epiweek_v_rutina, na.rm = TRUE),
+          end = max(agri_casa_summary$epiweek_v_rutina, na.rm = TRUE)
+        )
+      ),
+      mainPanel(
+        plotOutput("disease_plot_tab2")
+      )
     )
   )
 }
@@ -76,11 +106,12 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output) {
   
+# Influenza -----------------------------------------------------------------------
   # Reactive expression to filter data based on selected disease and date range
   filtered_data <- reactive({
     # Load dataframe
     data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
-
+    
     # Filter data based on selected date range
     subset(data, epiweek_recolec >= input$date_range_input_tab1[1] & 
              epiweek_recolec <= input$date_range_input_tab1[2])
@@ -94,10 +125,10 @@ server <- function(input, output) {
     pct_pos_column_name <- paste0("pct_pos_", input$virus)
     
     virus_labels <- c("resul_inf_a_all" = "Influenza A",
-      "resul_inf_b_all" = "Influenza B",
-      "resul_rsv_all" = "RSV",
-       "resul_sars_all" = "PCR-Confirmed SARS-CoV-2",
-       "resul_covid_19_all" = "Rapid Antigen Test-Confirmed SARS-CoV-2")
+                      "resul_inf_b_all" = "Influenza B",
+                      "resul_rsv_all" = "RSV",
+                      "resul_sars_all" = "PCR-Confirmed SARS-CoV-2",
+                      "resul_covid_19_all" = "Rapid Antigen Test-Confirmed SARS-CoV-2")
     selected_virus_label <- virus_labels[[input$virus]]
     
     ggplot(filtered, aes(x = epiweek_recolec)) +
@@ -116,9 +147,42 @@ server <- function(input, output) {
       theme(axis.text.x = element_blank())
     
   })
+  
+# Agri-Casa -----------------------------------------------------------------------
+    
+  # Reactive expression for Agri-Casa data filtering
+  filtered_data_tab2 <- reactive({
+    agri_casa_summary %>%
+      filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
+      filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
+      filter(!is.na(epiweek_v_rutina))
+  })
+  
+  output$disease_plot_tab2 <- renderPlot({
+    req(input$columns_selected)  # Ensure columns are selected
+    
+    agri_casa_simptomas <- filtered_data_tab2() %>%
+      rowwise() %>%
+      mutate(has_one = any(c_across(all_of(input$columns_selected)) == 1)) %>%
+      ungroup() %>%
+      group_by(epiweek_v_rutina) %>%
+      summarise(
+        total_individuos = n(),
+        individuos_con_simptomas = sum(has_one),
+        percentaje_simptomas = (individuos_con_simptomas / total_individuos) * 100
+      )
+    
+    ggplot(agri_casa_simptomas, aes(x = epiweek_v_rutina, y = individuos_con_simptomas, group = 1)) +
+      geom_line() +
+      labs(
+        title = "Individuos con los síntomas especificados \n por semana durante Vigilancia Rutina",
+        x = "Semana",
+        y = "Individuos experimentando estos síntomas"
+      ) +
+      theme_minimal()
+  })
 }
 
 shinyApp(ui, server)
 
 # https://medium.com/@rami.krispin/deploy-shiny-app-on-github-pages-b4cbd433bdc
-
