@@ -8,6 +8,9 @@ r_shiny_account_token <- Sys.getenv("r_shiny_account_token")
 # Connect the r script below to an R shiny account
 rsconnect::setAccountInfo(name='cutrifinio', token='C0BFCA28C1FE0F83CB5E67B30FA01E0E', secret= r_shiny_account_token)
 
+# Delete previous version of app
+rsconnect::removeApp(appName = 'code/')
+
 # Deploy app
 rsconnect::deployApp('code/')
 
