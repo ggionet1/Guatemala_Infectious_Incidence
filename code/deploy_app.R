@@ -2,8 +2,11 @@
 # Using shinyapp.io
 library(rsconnect)
 
+# Save secret token for connecting to R shiny account
+r_shiny_account_token <- Sys.getenv("r_shiny_account_token")
+
 # Connect the r script below to an R shiny account
-rsconnect::setAccountInfo(name='cutrifinio', token='C0BFCA28C1FE0F83CB5E67B30FA01E0E', secret='b6lWE/Jk2CFw+J5Vu6F3zXxgyk/AsEu9iuVcBGxG')
+rsconnect::setAccountInfo(name='cutrifinio', token='C0BFCA28C1FE0F83CB5E67B30FA01E0E', secret= r_shiny_account_token)
 
 # Deploy app
 rsconnect::deployApp('code/')
