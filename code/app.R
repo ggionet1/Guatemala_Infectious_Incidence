@@ -2,6 +2,7 @@
 library(bslib)
 library(ggplot2)
 library(ggrepel)
+library(dplyr)
 
 # Load dataframes ---------
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
@@ -159,9 +160,9 @@ server <- function(input, output) {
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
     agri_casa_summary %>%
-      filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
-      filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
-      filter(!is.na(epiweek_v_rutina))
+      dplyr::filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
+      dplyr::filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
+      dplyr::filter(!is.na(epiweek_v_rutina))
   })
   
   output$disease_plot_tab2 <- renderPlot({
@@ -169,17 +170,17 @@ server <- function(input, output) {
     
     agri_casa_simptomas <- filtered_data_tab2() %>%
       rowwise() %>%
-      mutate(has_one = any(c_across(all_of(input$columns_selected)) == 1)) %>%
+      dplyr::mutate(has_one = any(c_across(all_of(input$columns_selected)) == 1)) %>%
       ungroup() %>%
       group_by(epiweek_v_rutina) %>%
-      summarise(
+      dplyr::summarise(
         total_individuos = n(),
         individuos_con_simptomas = sum(has_one),
         percentaje_simptomas = (individuos_con_simptomas / total_individuos) * 100
       )
     
     ggplot(agri_casa_simptomas, aes(x = epiweek_v_rutina, y = individuos_con_simptomas, group = 1)) +
-      geom_line() +
+      geom_bar() +
       labs(
         title = "Individuos con los síntomas especificados \n por semana durante Vigilancia Rutina",
         x = "Semana",
