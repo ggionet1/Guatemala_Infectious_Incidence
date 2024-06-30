@@ -3,6 +3,11 @@ library(bslib)
 library(ggplot2)
 library(ggrepel)
 
+# Load dataframes ---------
+influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
+agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary.csv")
+
+# ------------------------------------------------------
 # Define UI for random distribution app ----
 # Sidebar layout with input and output definitions ----
 
@@ -15,8 +20,9 @@ ui_tab1 <- function() {
                         c("Influenza A" = "resul_inf_a_all",
                           "Influenza B" = "resul_inf_b_all",
                           "RSV" = "resul_rsv_all",
-                          "PCR-Confirmed SARS-CoV-2" = "resul_sars_all",
-                          "Rapid Antigen Test-Confirmed SARS-CoV-2" = "resul_covid_19_all")),
+                          "SARS-CoV-2 confirmado por PCR" = "resul_sars_all",
+                          "SARS-CoV-2 confirmado por prueba rápida de antígenos" = "resul_covid_19_all",
+                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all")),
     ),
     column(6,
            # Date range input
@@ -63,8 +69,8 @@ ui_tab2 <- function() {
         dateRangeInput(
           "date_range_input_tab2",
           "Filtra período del tiempo:",
-          start = min(agri_casa_summary$epiweek_v_rutina, na.rm = TRUE),
-          end = max(agri_casa_summary$epiweek_v_rutina, na.rm = TRUE)
+          start = "2023-10-02",
+          end = Sys.Date()
         )
       ),
       mainPanel(
@@ -106,16 +112,13 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output) {
   
-# Influenza -----------------------------------------------------------------------
+  # Influenza -----------------------------------------------------------------------
 
-    # Reactive expression to filter data based on selected disease and date range
+  # Reactive expression to filter data based on selected disease and date range
   filtered_data <- reactive({
     
-    # Load dataframe
-    data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
-    
     # Filter data based on selected date range
-    subset(data, epiweek_recolec >= input$date_range_input_tab1[1] & 
+    subset(influenza_summary, epiweek_recolec >= input$date_range_input_tab1[1] & 
              epiweek_recolec <= input$date_range_input_tab1[2])
   })
   
@@ -129,36 +132,32 @@ server <- function(input, output) {
     virus_labels <- c("resul_inf_a_all" = "Influenza A",
                       "resul_inf_b_all" = "Influenza B",
                       "resul_rsv_all" = "RSV",
-                      "resul_sars_all" = "PCR-Confirmed SARS-CoV-2",
-                      "resul_covid_19_all" = "Rapid Antigen Test-Confirmed SARS-CoV-2")
+                      "resul_sars_all" = "SARS-CoV-2 confirmado por PCR",
+                      "resul_covid_19_all" = "SARS-CoV-2 confirmado por prueba rápida de antígenos", 
+                      "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
     selected_virus_label <- virus_labels[[input$virus]]
     
     ggplot(filtered, aes(x = epiweek_recolec)) +
       geom_bar(aes(y = .data[[count_all_column_name]], fill = "Total"), stat = "identity") +
-      geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Positive"), stat = "identity") +
-      scale_fill_manual(values = c("Total" = "grey", "Positive" = "red")) +
+      geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Prueba Positiva"), stat = "identity") +
+      scale_fill_manual(values = c("Total" = "grey", "Prueba Positiva" = "red")) +
       geom_text_repel(aes(y = .data[[count_pos_column_name]], 
                           label = ifelse(filtered[[pct_pos_column_name]] > 0, paste0(round(filtered[[pct_pos_column_name]]), "%"), "")),
                       vjust = -0.5, color = "black", size = 3) +
       theme_classic() +
-      labs(title = paste("Counts of", selected_virus_label, "over Time"),
-           x = "Epiweek",
-           y = "Number of Tests",
-           fill = "Test Positivity") +
+      labs(title = paste("Resultados de Pruebas de", selected_virus_label),
+           x = "Epiweek (Semana cuando se detectó la infección por primera vez)",
+           y = "Número de individuos",
+           fill = "Resultado") +
       scale_y_continuous(breaks = seq(0, max(filtered[[count_all_column_name]]), by = 1))+
       theme(axis.text.x = element_blank())
     
   })
   
-# Agri-Casa -----------------------------------------------------------------------
+  # Agri-Casa -----------------------------------------------------------------------
 
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
-      
-    # Load dataframe
-    data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary.csv")
-      
-      # Filter dataframe
     agri_casa_summary %>%
       filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
       filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
@@ -184,7 +183,7 @@ server <- function(input, output) {
       labs(
         title = "Individuos con los síntomas especificados \n por semana durante Vigilancia Rutina",
         x = "Semana",
-        y = "Individuos experimentando estos síntomas"
+        y = "Número de individuos experimentando estos síntomas"
       ) +
       theme_minimal()
   })
