@@ -107,11 +107,12 @@ ui <- fluidPage(
 server <- function(input, output) {
   
 # Influenza -----------------------------------------------------------------------
-  # Reactive expression to filter data based on selected disease and date range
-  filtered_data <- reactive({
     # Load dataframe
     data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
     
+    # Reactive expression to filter data based on selected disease and date range
+  filtered_data <- reactive({
+
     # Filter data based on selected date range
     subset(data, epiweek_recolec >= input$date_range_input_tab1[1] & 
              epiweek_recolec <= input$date_range_input_tab1[2])
@@ -149,7 +150,9 @@ server <- function(input, output) {
   })
   
 # Agri-Casa -----------------------------------------------------------------------
-    
+    # Load dataframe
+    data <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary.csv")
+
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
     agri_casa_summary %>%
