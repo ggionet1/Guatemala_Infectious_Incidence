@@ -1,5 +1,6 @@
 # ---------------------------------------------------------
 # Using shinyapp.io
+#install.packages("rsconnect", repos = "https://cran.rstudio.com")
 library(rsconnect)
 
 # Save secret token for connecting to R shiny account
@@ -14,7 +15,7 @@ rsconnect::setAccountInfo(name='cutrifinio', token=r_shiny_token, secret= r_shin
 rsconnect::deployApp('code/', forceUpdate = TRUE, launch.browser = FALSE)
 
 # Restart app (fixes timeout error)
-restartApp('code/')
+rsconnect::restartApp('code/')
 
 # ----------------------------------------------------------
 # Using Github (extremely slow)
