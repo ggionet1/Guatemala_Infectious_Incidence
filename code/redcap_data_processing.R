@@ -213,7 +213,6 @@ agri_casa_summary <- agri_casa%>%
 agri_casa_csv_file <- "docs/agri_casa_summary.csv"
 write.csv(agri_casa_summary, file = agri_casa_csv_file, row.names = FALSE)
 
-
 # ----------------------------------------------------------------------------
 # --------------------Prepare BIOFIRE dataset ------------------------------
 # ----------------------------------------------------------------------------
