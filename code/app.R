@@ -8,6 +8,13 @@ library(dplyr)
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
 agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary.csv")
 
+# Define any needed functions -------------------------
+# Function to format date labels in Spanish
+format_date_spanish <- function(x) {
+  months <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+  paste(months[as.numeric(format(x, "%m"))], format(x, "\n %Y"), sep = " ")
+}
+
 # ------------------------------------------------------
 # Define UI for random distribution app ----
 # Sidebar layout with input and output definitions ----
@@ -179,14 +186,17 @@ server <- function(input, output) {
         percentaje_simptomas = (individuos_con_simptomas / total_individuos) * 100
       )
     
-    ggplot(agri_casa_simptomas, aes(x = epiweek_v_rutina, y = individuos_con_simptomas, group = 1)) +
-      geom_bar() +
+    agri_casa_simptomas%>%
+      dplyr::mutate(epiweek_v_rutina_date = as.Date(epiweek_v_rutina))%>%
+      ggplot(aes(x = epiweek_v_rutina_date, y = individuos_con_simptomas)) +
+      geom_bar(stat="identity") +
       labs(
         title = "Individuos con los síntomas especificados \n por semana durante Vigilancia Rutina",
         x = "Semana",
         y = "Número de individuos experimentando estos síntomas"
       ) +
-      theme_minimal()
+      theme_minimal()+
+      scale_x_date(labels = format_date_spanish)
   })
 }
 
