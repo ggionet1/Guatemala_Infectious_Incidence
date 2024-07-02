@@ -24,7 +24,7 @@ ui_tab1 <- function() {
   fluidRow(
     column(6,
            # Dropdown menu for selecting disease
-           radioButtons("virus", "Virus Incidence:",
+           radioButtons("virus", "Elige el virus:",
                         c("Influenza A" = "resul_inf_a_all",
                           "Influenza B" = "resul_inf_b_all",
                           "RSV" = "resul_rsv_all",
@@ -110,9 +110,9 @@ ui <- fluidPage(
   # Main panel content goes here
   tabsetPanel(
     # Define the three tabs
-    tabPanel("Influenza Study", ui_tab1()),
-    tabPanel("Agri-Casa Study", ui_tab2()),
-    tabPanel("NAMRU-Biofire Study", ui_tab3())
+    tabPanel("Estudio de Influenza", ui_tab1()),
+    tabPanel("Estudio de Agri-Casa", ui_tab2()),
+    tabPanel("Estudio de NAMRU-Biofire", ui_tab3())
   )
 )
 
@@ -145,20 +145,29 @@ server <- function(input, output) {
                       "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
     selected_virus_label <- virus_labels[[input$virus]]
     
-    ggplot(filtered, aes(x = epiweek_recolec)) +
+    # Plot
+    filtered%>%
+      dplyr::mutate(epiweek_recolec_date = as.Date(epiweek_recolec))%>%
+    ggplot(aes(x = epiweek_recolec_date)) +
       geom_bar(aes(y = .data[[count_all_column_name]], fill = "Total"), stat = "identity") +
       geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Prueba Positiva"), stat = "identity") +
       scale_fill_manual(values = c("Total" = "grey", "Prueba Positiva" = "red")) +
-      geom_text_repel(aes(y = .data[[count_pos_column_name]], 
-                          label = ifelse(filtered[[pct_pos_column_name]] > 0, paste0(round(filtered[[pct_pos_column_name]]), "%"), "")),
-                      vjust = -0.5, color = "black", size = 3) +
+      #geom_text_repel(
+      #  aes(y = .data[[count_all_column_name]], 
+      #      label = ifelse(filtered[[pct_pos_column_name]] > 0, paste0(round(filtered[[pct_pos_column_name]]), "%"), "")),
+      #  box.padding = 0.5,  # Adjust this value as needed
+      #  point.padding = 1,  # Adjust this value as needed
+      #  segment.curvature = 0.2,  # Adjust this value as needed
+      #  vjust = -0.5, 
+      #  color = "black", 
+      #  size = 3)+
       theme_classic() +
       labs(title = paste("Resultados de Pruebas de", selected_virus_label),
            x = "Epiweek (Semana cuando se detectó la infección por primera vez)",
            y = "Número de individuos",
            fill = "Resultado") +
       scale_y_continuous(breaks = seq(0, max(filtered[[count_all_column_name]]), by = 1))+
-      theme(axis.text.x = element_blank())
+      scale_x_date(labels = format_date_spanish)
     
   })
   

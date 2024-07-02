@@ -3,13 +3,18 @@
 library(rsconnect)
 
 # Save secret token for connecting to R shiny account
-r_shiny_account_token <- Sys.getenv("r_shiny_account_token")
+r_shiny_account_secret <- Sys.getenv("r_shiny_account_token")
+r_shiny_token <- Sys.getenv("r_shiny_token")
+
 
 # Connect the r script below to an R shiny account
-rsconnect::setAccountInfo(name='cutrifinio', token='C0BFCA28C1FE0F83CB5E67B30FA01E0E', secret= r_shiny_account_token)
+rsconnect::setAccountInfo(name='cutrifinio', token=r_shiny_token, secret= r_shiny_account_secret)
 
 # Deploy app
-rsconnect::deployApp('code/', forceUpdate = TRUE)
+rsconnect::deployApp('code/', forceUpdate = TRUE, launch.browser = FALSE)
+
+# Restart app (fixes timeout error)
+restartApp('code/')
 
 # ----------------------------------------------------------
 # Using Github (extremely slow)
