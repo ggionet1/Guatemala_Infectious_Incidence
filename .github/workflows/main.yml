@@ -24,21 +24,14 @@ jobs:
           influenza_token: ${{ secrets.INFLUENZA_TOKEN }}
           namru_biofire_token: ${{ secrets.NAMRU_BIOFIRE_TOKEN }}
           agri_casa_token: ${{ secrets.AGRI_CASA_TOKEN }}
+          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
+          r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
         run: |
           Rscript code/redcap_data_processing.R
-
-      - name: Commit updated CSV files
-        run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           git add docs/influenza_summary.csv
           git add docs/agri_casa_summary.csv
           git commit -m "Update data"
           git push
-
-      - name: Deploy Shiny app
-        env:
-          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
-          r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
-        run: |
           Rscript code/deploy_app.R
