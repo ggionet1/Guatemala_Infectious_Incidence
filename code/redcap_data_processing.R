@@ -4,16 +4,6 @@
 # Set a default CRAN mirror
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
-# Install packages
-install.packages("remotes")
-install.packages("usethis")
-install.packages("REDCapR")
-install.packages("ggplot2")
-install.packages("lubridate")
-install.packages("purr")
-install.packages("ggrepel")
-install.packages("dplyr")
-
 # Load libraries
 library(remotes)
 library(usethis)
