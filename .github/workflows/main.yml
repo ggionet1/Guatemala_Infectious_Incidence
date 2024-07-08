@@ -1,4 +1,4 @@
-name: Update data weekly Monday 9am EST
+name: Weekly Data Update and Deployment
 
 on:
   schedule:
@@ -13,18 +13,44 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v2
-      - uses: mamba-org/setup-micromamba@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up MicroMamba
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: .github/Guatemala_env.yml
           environment-name: Guatemala_env
-      - name: Run R file
+
+      - name: Run R scripts
         env:
           influenza_token: ${{ secrets.INFLUENZA_TOKEN }}
           namru_biofire_token: ${{ secrets.NAMRU_BIOFIRE_TOKEN }}
           agri_casa_token: ${{ secrets.AGRI_CASA_TOKEN }}
-          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
-          r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
         run: |
           Rscript code/redcap_data_processing.R
+
+      - name: Commit new data to repository
+        run: |
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+
+          timestamp=$(date +'%Y%m%d%H%M%S')
+          branch_name="update-csv-$timestamp"
+
+          git checkout -b "$branch_name"
+          git add docs/influenza_summary.csv
+          git add docs/agri_casa_summary.csv
+          git commit -m "Update CSV files"
+          git push origin "$branch_name"
+          git checkout main
+          git merge --no-ff "$branch_name"
+          git push origin main
+          git branch -d "$branch_name"
+          git push origin --delete "$branch_name"
+
+      - name: Deploy application
+        env:
+          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
+        run: |
           Rscript code/deploy_app.R
