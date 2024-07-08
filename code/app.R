@@ -3,10 +3,11 @@ library(bslib)
 library(ggplot2)
 library(ggrepel)
 library(dplyr)
+library(shinythemes)
 
 # Load dataframes ---------
-influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary.csv")
-agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary.csv")
+influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
+agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
 
 # Define any needed functions -------------------------
 # Function to format date labels in Spanish
@@ -107,6 +108,9 @@ ui <- fluidPage(
   # Application title
   titlePanel("Infectious Disease Incidence in Guatemala"),
   
+  # Theme
+  theme = shinytheme("united"),    
+
   # Main panel content goes here
   tabsetPanel(
     # Define the three tabs
