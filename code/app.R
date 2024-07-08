@@ -9,6 +9,7 @@ library(shinythemes)
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
 agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
 
+
 # Define any needed functions -------------------------
 # Function to format date labels in Spanish
 format_date_spanish <- function(x) {
@@ -25,7 +26,7 @@ ui_tab1 <- function() {
   fluidRow(
     column(6,
            # Dropdown menu for selecting disease
-           radioButtons("virus", "Elige el virus:",
+           radioButtons("virus", "Virus Incidence:",
                         c("Influenza A" = "resul_inf_a_all",
                           "Influenza B" = "resul_inf_b_all",
                           "RSV" = "resul_rsv_all",
@@ -106,17 +107,17 @@ ui_tab3 <- function() {
 ui <- fluidPage(
   
   # Application title
-  titlePanel("Infectious Disease Incidence in Guatemala"),
+  titlePanel("Enfermedades Respiratorias Infectuosas en Guatemala"),
   
   # Theme
-  theme = shinytheme("united"),    
-
+  theme = shinytheme("united"),
+  
   # Main panel content goes here
   tabsetPanel(
     # Define the three tabs
     tabPanel("Estudio de Influenza", ui_tab1()),
-    tabPanel("Estudio de Agri-Casa", ui_tab2()),
-    tabPanel("Estudio de NAMRU-Biofire", ui_tab3())
+    tabPanel("Estudio AGRI-CASA", ui_tab2()),
+    tabPanel("Estudio NAMRU-Biofire", ui_tab3())
   )
 )
 
@@ -128,27 +129,12 @@ server <- function(input, output) {
 
   # Reactive expression to filter data based on selected disease and date range
   filtered_data <- reactive({
-    
+
     # Filter data based on selected date range
     subset(influenza_summary, epiweek_recolec >= input$date_range_input_tab1[1] & 
              epiweek_recolec <= input$date_range_input_tab1[2])
   })
   
-  # Render the plot based on filtered data
-  output$disease_plot_tab1 <- renderPlot({
-    filtered <- filtered_data()
-    count_all_column_name <- paste0("count_all_", input$virus)
-    count_pos_column_name <- paste0("count_pos_", input$virus)
-    pct_pos_column_name <- paste0("pct_pos_", input$virus)
-    
-    virus_labels <- c("resul_inf_a_all" = "Influenza A",
-                      "resul_inf_b_all" = "Influenza B",
-                      "resul_rsv_all" = "RSV",
-                      "resul_sars_all" = "SARS-CoV-2 confirmado por PCR",
-                      "resul_covid_19_all" = "SARS-CoV-2 confirmado por prueba rápida de antígenos", 
-                      "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
-    selected_virus_label <- virus_labels[[input$virus]]
-    
   # Render the plot based on filtered data
   output$disease_plot_tab1 <- renderPlot({
     filtered <- filtered_data()
@@ -190,16 +176,15 @@ server <- function(input, output) {
       scale_x_date(labels = format_date_spanish)
     
   })
-
   
   # Agri-Casa -----------------------------------------------------------------------
 
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
     agri_casa_summary %>%
-      dplyr::filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
-      dplyr::filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
-      dplyr::filter(!is.na(epiweek_v_rutina))
+      filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
+      filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
+      filter(!is.na(epiweek_v_rutina))
   })
   
   output$disease_plot_tab2 <- renderPlot({
@@ -207,10 +192,10 @@ server <- function(input, output) {
     
     agri_casa_simptomas <- filtered_data_tab2() %>%
       rowwise() %>%
-      dplyr::mutate(has_one = any(c_across(all_of(input$columns_selected)) == 1)) %>%
+      mutate(has_one = any(c_across(all_of(input$columns_selected)) == 1)) %>%
       ungroup() %>%
       group_by(epiweek_v_rutina) %>%
-      dplyr::summarise(
+      summarise(
         total_individuos = n(),
         individuos_con_simptomas = sum(has_one),
         percentaje_simptomas = (individuos_con_simptomas / total_individuos) * 100
