@@ -24,19 +24,18 @@ jobs:
           influenza_token: ${{ secrets.INFLUENZA_TOKEN }}
           namru_biofire_token: ${{ secrets.NAMRU_BIOFIRE_TOKEN }}
           agri_casa_token: ${{ secrets.AGRI_CASA_TOKEN }}
-          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
         run: |
           Rscript code/redcap_data_processing.R
-          
+
+      - name: Commit new data to repository
+        run: |
           # Check if there are changes in agri_casa_summary.csv or influenza_summary.csv
           if ! git diff --quiet --exit-code docs/agri_casa_summary_updated.csv \
            || ! git diff --quiet --exit-code docs/influenza_summary_updated.csv; then
             git config --local user.name "GitHub Actions"
             git config --local user.email "actions@github.com"
-
             timestamp=$(date +'%Y%m%d%H%M%S')
             branch_name="update-csv-$timestamp"
-
             git checkout -b "$branch_name"
             git add docs/influenza_summary_updated.csv
             git add docs/agri_casa_summary_updated.csv
@@ -53,9 +52,8 @@ jobs:
 
       - name: Deploy applications
         env:
-          influenza_token: ${{ secrets.INFLUENZA_TOKEN }}
-          namru_biofire_token: ${{ secrets.NAMRU_BIOFIRE_TOKEN }}
-          agri_casa_token: ${{ secrets.AGRI_CASA_TOKEN }}
           r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
+          r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
         run: |
           Rscript code/deploy_app.R
+
