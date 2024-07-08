@@ -149,9 +149,25 @@ server <- function(input, output) {
                       "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
     selected_virus_label <- virus_labels[[input$virus]]
     
-    # Plot
+  # Render the plot based on filtered data
+  output$disease_plot_tab1 <- renderPlot({
+    filtered <- filtered_data()
+    count_all_column_name <- paste0("count_all_", input$virus)
+    count_pos_column_name <- paste0("count_pos_", input$virus)
+    pct_pos_column_name <- paste0("pct_pos_", input$virus)
+    
+    virus_labels <- c("resul_inf_a_all" = "Influenza A",
+                      "resul_inf_b_all" = "Influenza B",
+                      "resul_rsv_all" = "RSV",
+                      "resul_sars_all" = "SARS-CoV-2 confirmado por PCR",
+                      "resul_covid_19_all" = "SARS-CoV-2 confirmado por prueba rápida de antígenos", 
+                      "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
+    selected_virus_label <- virus_labels[[input$virus]]
+    
     filtered%>%
-      dplyr::mutate(epiweek_recolec_date = as.Date(epiweek_recolec))%>%
+      dplyr::mutate(epiweek_recolec_date = as.Date(epiweek_recolec),
+                    count_all_column_name = ifelse(is.na(count_all_column_name), 0, count_all_column_name)
+      )%>%
     ggplot(aes(x = epiweek_recolec_date)) +
       geom_bar(aes(y = .data[[count_all_column_name]], fill = "Total"), stat = "identity") +
       geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Prueba Positiva"), stat = "identity") +
@@ -170,10 +186,11 @@ server <- function(input, output) {
            x = "Epiweek (Semana cuando se detectó la infección por primera vez)",
            y = "Número de individuos",
            fill = "Resultado") +
-      scale_y_continuous(breaks = seq(0, max(filtered[[count_all_column_name]]), by = 1))+
+      scale_y_continuous(breaks = seq(0, max(filtered[[count_all_column_name]], na.rm=TRUE), by = 1))+
       scale_x_date(labels = format_date_spanish)
     
   })
+
   
   # Agri-Casa -----------------------------------------------------------------------
 
