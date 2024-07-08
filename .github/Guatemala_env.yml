@@ -18,3 +18,4 @@ dependencies:
   - r-dplyr
   - r-shiny
   - r-bslib
+  - r-shinythemes
