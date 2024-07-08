@@ -172,7 +172,7 @@ summary_combined <- lapply(columns_to_process, function(col) generate_summary(me
               values_from = c(count_all, count_neg, count_pos, pct_pos))
 
 # Save the summary dataframe
-influenza_csv_file <- "docs/influenza_summary.csv"
+influenza_csv_file <- "docs/influenza_summary_updated.csv"
 write.csv(summary_combined, file = influenza_csv_file, row.names = FALSE)
 
 # ----------------------------------------------------------------------------
@@ -210,7 +210,7 @@ agri_casa_summary <- agri_casa%>%
                                   all_of(columns_sintomas_nuevos_v_rutina))
 
 # Save the summary dataframe
-agri_casa_csv_file <- "docs/agri_casa_summary.csv"
+agri_casa_csv_file <- "docs/agri_casa_summary_updated.csv"
 write.csv(agri_casa_summary, file = agri_casa_csv_file, row.names = FALSE)
 
 # ----------------------------------------------------------------------------
