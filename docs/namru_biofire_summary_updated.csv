@@ -1,0 +1,17 @@
+"Patógeno","Numero de personas","Tipo de Muestra","Semana más reciente con resultado positivo"
+"Adenovirus",3,"nasofaríngeo",2023-01-09
+"Influenza A/H3",2,"nasofaríngeo",2022-01-03
+"Parainfluenza 1",1,"nasofaríngeo",2021-04-05
+"Parainfluenza 2",2,"nasofaríngeo",2023-05-15
+"Parainfluenza 3",5,"nasofaríngeo",2021-07-19
+"Parainfluenza 4",3,"nasofaríngeo",2022-07-11
+"Virus Sincitial Respiratorio",2,"nasofaríngeo",2021-08-16
+"Chlamydophila pneumonia",1,"nasofaríngeo",2023-07-10
+"Coronavirus HKU1",3,"nasofaríngeo",2022-01-31
+"Severe Acute Respiratory Syndrome Coronavirus 2 (SARS-CoV-2)",9,"nasofaríngeo",2022-04-11
+"Coronavirus NL63",3,"nasofaríngeo",2021-01-25
+"Coronavirus 229E",5,"nasofaríngeo",2022-01-17
+"Coronavirus OC43",1,"nasofaríngeo",2021-01-18
+"Metapneumovirus humano",4,"nasofaríngeo",2021-12-13
+"Human Rhinovirus/ Enterovirus",69,"nasofaríngeo",2023-08-28
+"Dengue",3,"sangre",2024-01-22
