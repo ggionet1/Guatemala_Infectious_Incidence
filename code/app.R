@@ -9,7 +9,7 @@ library(reactable)
 # Load dataframes ---------
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
 agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
-namru_biofire_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/namru_biofire_summary.csv")
+namru_biofire_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/namru_biofire_summary_updated.csv")
 
 # Define any needed functions -------------------------
 # Function to format date labels in Spanish
