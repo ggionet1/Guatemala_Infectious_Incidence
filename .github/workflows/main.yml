@@ -42,6 +42,7 @@ jobs:
             git checkout -b "$branch_name"
             git add docs/influenza_summary_updated.csv
             git add docs/agri_casa_summary_updated.csv
+            git add docs/namru_biofire_summary_updated.csv
             git commit -m "Update CSV files"
             git push origin "$branch_name"
             git checkout main

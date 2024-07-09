@@ -216,3 +216,134 @@ write.csv(agri_casa_summary, file = agri_casa_csv_file, row.names = FALSE)
 # ----------------------------------------------------------------------------
 # --------------------Prepare BIOFIRE dataset ------------------------------
 # ----------------------------------------------------------------------------
+
+# Create epiweek
+namru_biofire$epiweek_recoleccion <- floor_date(namru_biofire$fecha_recoleccion, unit = "week", week_start = 1)
+
+# Columns of interest
+columns_of_interest_biofire <- c(
+  "patogenos_positivos_sangre___1",
+  "patogenos_positivos_sangre___2",
+  "patogenos_positivos_sangre___3",
+  "patogenos_positivos_sangre___4",
+  "patogenos_positivos_sangre___5",
+  "patogenos_positivos_sangre___6",
+  "patogenos_positivos_sangre___7",
+  "patogenos_positivos_sangre___8",
+  "patogenos_positivos_sangre___9",
+  "patogenos_positivos_sangre___10",
+  "patogenos_positivos_sangre___11",
+  "patogenos_positivos_sangre___12",
+  "patogenos_positivos_sangre___13",
+  "patogenos_positivos_sangre___14",
+  "patogenos_positivos_sangre___15",
+  "patogenos_positivos_sangre___16",
+  "patogenos_positivos_sangre___17",
+  "patogenos_positivos_sangre___18",
+  "patogenos_positivos_sangre___19",
+  "patogenos_positivos_hisnaso___1",
+  "patogenos_positivos_hisnaso___2",
+  "patogenos_positivos_hisnaso___3",
+  "patogenos_positivos_hisnaso___4",
+  "patogenos_positivos_hisnaso___5",
+  "patogenos_positivos_hisnaso___6",
+  "patogenos_positivos_hisnaso___7",
+  "patogenos_positivos_hisnaso___8",
+  "patogenos_positivos_hisnaso___9",
+  "patogenos_positivos_hisnaso___10",
+  "patogenos_positivos_hisnaso___11",
+  "patogenos_positivos_hisnaso___12",
+  "patogenos_positivos_hisnaso___13",
+  "patogenos_positivos_hisnaso___14",
+  "patogenos_positivos_hisnaso___15",
+  "patogenos_positivos_hisnaso___16",
+  "patogenos_positivos_hisnaso___17",
+  "patogenos_positivos_hisnaso___18",
+  "patogenos_positivos_hisnaso___19",
+  "patogenos_positivos_hisnaso___20",
+  "patogenos_positivos_hisnaso___21"
+)
+
+
+# Vector mapping column names to pathogen names
+pathogen_names <- c(
+  "patogenos_positivos_sangre___1" = "Chikungunya",
+  "patogenos_positivos_sangre___2" = "Fiebre hemorrágica de Crimean-Congo",
+  "patogenos_positivos_sangre___3" = "Dengue",
+  "patogenos_positivos_sangre___4" = "Ebola",
+  "patogenos_positivos_sangre___5" = "Lassa",
+  "patogenos_positivos_sangre___6" = "Marburg",
+  "patogenos_positivos_sangre___7" = "West Nile",
+  "patogenos_positivos_sangre___8" = "Fiebre amarilla",
+  "patogenos_positivos_sangre___9" = "Zika",
+  "patogenos_positivos_sangre___10" = "Bacillus anthracis",
+  "patogenos_positivos_sangre___11" = "Francisella tularensis",
+  "patogenos_positivos_sangre___12" = "Leptospira spp.",
+  "patogenos_positivos_sangre___13" = "Salmonella enterica serovar Typhi",
+  "patogenos_positivos_sangre___14" = "Salmonella enterica serovar Paratyphi A",
+  "patogenos_positivos_sangre___15" = "Yersinia pestis",
+  "patogenos_positivos_sangre___16" = "Leishmania spp.",
+  "patogenos_positivos_sangre___17" = "Plasmodium spp.",
+  "patogenos_positivos_sangre___18" = "P. falciparum",
+  "patogenos_positivos_sangre___19" = "P. vivax/ovale",
+  "patogenos_positivos_hisnaso___1" = "Adenovirus",
+  "patogenos_positivos_hisnaso___2" = "Coronavirus HKU1",
+  "patogenos_positivos_hisnaso___3" = "Coronavirus NL63",
+  "patogenos_positivos_hisnaso___4" = "Coronavirus 229E",
+  "patogenos_positivos_hisnaso___5" = "Coronavirus OC43",
+  "patogenos_positivos_hisnaso___6" = "Metapneumovirus humano",
+  "patogenos_positivos_hisnaso___7" = "Human Rhinovirus/ Enterovirus",
+  "patogenos_positivos_hisnaso___8" = "Influenza A",
+  "patogenos_positivos_hisnaso___9" = "Influenza A/H1",
+  "patogenos_positivos_hisnaso___10" = "Influenza A/H1-2009",
+  "patogenos_positivos_hisnaso___11" = "Influenza A/H3",
+  "patogenos_positivos_hisnaso___12" = "Influenza B",
+  "patogenos_positivos_hisnaso___13" = "Parainfluenza 1",
+  "patogenos_positivos_hisnaso___14" = "Parainfluenza 2",
+  "patogenos_positivos_hisnaso___15" = "Parainfluenza 3",
+  "patogenos_positivos_hisnaso___16" = "Parainfluenza 4",
+  "patogenos_positivos_hisnaso___17" = "Virus Sincitial Respiratorio",
+  "patogenos_positivos_hisnaso___18" = "Bordetella pertussis",
+  "patogenos_positivos_hisnaso___19" = "Chlamydophila pneumonia",
+  "patogenos_positivos_hisnaso___20" = "Mycoplasma pneumoniae",
+  "patogenos_positivos_hisnaso___21" = "Severe Acute Respiratory Syndrome Coronavirus 2 (SARS-CoV-2)"
+)
+
+# Calculate the most recent epiweek for each column that has a 1
+most_recent_epiweek_df <- namru_biofire %>%
+  # Gather columns of interest into long format
+  tidyr::pivot_longer(cols = starts_with("patogenos_positivos"),
+               names_to = "Pathogen",
+               values_to = "Value") %>%
+  # Filter to rows where Value is 1
+  filter(Value == 1) %>%
+  # Group by Pathogen and find the most recent epiweek
+  group_by(Pathogen) %>%
+  summarise(
+    most_recent_epiweek = epiweek_recoleccion[which.max(epiweek_recoleccion[Value == 1])]
+  ) %>%
+  ungroup() %>%
+  arrange(most_recent_epiweek)
+
+
+# Calculate total counts of 1s for each column
+counts <- namru_biofire %>%
+  dplyr::summarise(across(all_of(columns_of_interest_biofire), ~ sum(. == 1, na.rm = TRUE)))
+
+biofire_count <- data.frame(
+  Pathogen = names(counts),
+  Count = as.vector(t(counts))
+)%>%
+  mutate(sample_type = case_when(
+    grepl("sangre", Pathogen, ignore.case = TRUE) ~ "sangre",
+    grepl("hisnaso", Pathogen, ignore.case = TRUE) ~ "nasofaríngeo",
+    TRUE ~ "other"  # Default case if neither "sangre" nor "hisnaso" is found
+  ))%>%
+  dplyr::filter(!Count==0)%>%
+  dplyr::mutate(Patógeno = pathogen_names[Pathogen])
+
+result_biofire <- merge(result, most_recent_epiweek_df, by="Pathogen", all=TRUE)%>%
+  dplyr::select(Patógeno, "Numero de personas" = Count, "Tipo de Muestra" = sample_type, "Semana más reciente con resultado positivo" = most_recent_epiweek)
+
+namru_biofire_csv_file <- "docs/namru_biofire_summary_updated.csv"
+write.csv(biofire_summary, file = namru_biofire_csv_file, row.names = FALSE)
