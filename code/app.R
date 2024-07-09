@@ -101,7 +101,8 @@ ui_tab3 <- function() {
                     choices = c("En el mes pasado" = "month",
                                 "En los 6 meses pasados" = "6months",
                                 "En 1 año pasado" = "year",
-                                "En la historia de nuestro estudio" = "all"))
+                                "En la historia de nuestro estudio" = "all"),
+                    selected = "all")
       ),
       mainPanel(
         reactableOutput("table_tab3")
@@ -184,7 +185,7 @@ server <- function(input, output) {
     
   })
   
-  # Agri-Casa -----------------------------------------------------------------------
+# Agri-Casa -----------------------------------------------------------------------
 
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
@@ -222,6 +223,7 @@ server <- function(input, output) {
   })
   
 # Biofire--------------------------------------------------------------------------
+
   filtered_biofire_data <- reactive({
     time_period <- switch(input$tab3_time_filter,
                           month = 30,
@@ -231,8 +233,13 @@ server <- function(input, output) {
     
     cutoff_date <- Sys.Date() - time_period
     
-    namru_biofire_summary %>%
-      filter(most_recent_epiweek >= cutoff_date)
+    namru_biofire_filtered <- namru_biofire_summary %>%
+      filter(Semana.más.reciente.con.resultado.positivo >= cutoff_date)
+    
+    as.data.frame(namru_biofire_filtered)%>%
+      select(Patógeno, `# Personas` = Numero.de.personas,
+             `Tipo de Muestra` = Tipo.de.Muestra,
+             `Semana más reciente \n con resultado \n positivo` = Semana.más.reciente.con.resultado.positivo)
   })
   
   output$table_tab3 <- renderReactable({
@@ -242,8 +249,6 @@ server <- function(input, output) {
   
 }
 
-
-# TOGETHER ------------------------------------------------------------------------
 shinyApp(ui, server)
 
 # https://medium.com/@rami.krispin/deploy-shiny-app-on-github-pages-b4cbd433bdc
