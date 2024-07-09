@@ -342,7 +342,7 @@ biofire_count <- data.frame(
   dplyr::filter(!Count==0)%>%
   dplyr::mutate(Patógeno = pathogen_names[Pathogen])
 
-result_biofire <- merge(result, most_recent_epiweek_df, by="Pathogen", all=TRUE)%>%
+result_biofire <- merge(biofire_count, most_recent_epiweek_df, by="Pathogen", all=TRUE)%>%
   dplyr::select(Patógeno, "Numero de personas" = Count, "Tipo de Muestra" = sample_type, "Semana más reciente con resultado positivo" = most_recent_epiweek)
 
 namru_biofire_csv_file <- "docs/namru_biofire_summary_updated.csv"
