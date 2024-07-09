@@ -4,11 +4,12 @@ library(ggplot2)
 library(ggrepel)
 library(dplyr)
 library(shinythemes)
+library(reactable)
 
 # Load dataframes ---------
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
 agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
-
+namru_biofire_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/namru_biofire_summary.csv")
 
 # Define any needed functions -------------------------
 # Function to format date labels in Spanish
@@ -91,14 +92,20 @@ ui_tab2 <- function() {
 }
 
 # Define UI for Tab 3
-ui_tab3 <- function() {
-  fluidRow(
-    column(12,
-           # Customize the UI for Tab 3 here
-           tags$h2("Custom UI for Tab 3"),
-           # Add UI elements specific to Tab 3
-           dateInput("date_input_tab3", "Date Input", value = Sys.Date()),
-           actionButton("action_button_tab3", "Action Button")
+ui_tab3 <- function() { 
+  fluidPage(
+    titlePanel("Enfermedades Detectadas por Namru/Biofire"),
+    sidebarLayout(
+      sidebarPanel(
+        selectInput("tab3_time_filter", "Ver cuantas enfermedades diferentes fueron detectadas:",
+                    choices = c("En el mes pasado" = "month",
+                                "En los 6 meses pasados" = "6months",
+                                "En 1 año pasado" = "year",
+                                "En la historia de nuestro estudio" = "all"))
+      ),
+      mainPanel(
+        reactableOutput("table_tab3")
+      )
     )
   )
 }
@@ -213,8 +220,30 @@ server <- function(input, output) {
       theme_minimal()+
       scale_x_date(labels = format_date_spanish)
   })
+  
+# Biofire--------------------------------------------------------------------------
+  filtered_biofire_data <- reactive({
+    time_period <- switch(input$tab3_time_filter,
+                          month = 30,
+                          `6months` = 180,
+                          year = 365,
+                          all = 99999)
+    
+    cutoff_date <- Sys.Date() - time_period
+    
+    namru_biofire_summary %>%
+      filter(most_recent_epiweek >= cutoff_date)
+  })
+  
+  output$table_tab3 <- renderReactable({
+    reactable(filtered_biofire_data())
+  })
+
+  
 }
 
+
+# TOGETHER ------------------------------------------------------------------------
 shinyApp(ui, server)
 
 # https://medium.com/@rami.krispin/deploy-shiny-app-on-github-pages-b4cbd433bdc

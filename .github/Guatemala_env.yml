@@ -19,3 +19,4 @@ dependencies:
   - r-shiny
   - r-bslib
   - r-shinythemes
+  - r-reactable
