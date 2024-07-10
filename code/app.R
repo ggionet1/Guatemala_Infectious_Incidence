@@ -8,7 +8,7 @@ library(reactable)
 
 # Load dataframes ---------
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
-agri_casa_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
+agri_casa_symptom_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_symptom_summary_updated.csv")
 namru_biofire_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/namru_biofire_summary_updated.csv")
 
 # Define any needed functions -------------------------
@@ -189,7 +189,7 @@ server <- function(input, output) {
 
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
-    agri_casa_summary %>%
+    agri_casa_symptom_summary %>%
       filter(epiweek_v_rutina >= input$date_range_input_tab2[1] & epiweek_v_rutina <= input$date_range_input_tab2[2]) %>%
       filter(realizado_vig_rut == 1 & sintoma_nuevo == 1) %>%
       filter(!is.na(epiweek_v_rutina))

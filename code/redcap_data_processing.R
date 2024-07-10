@@ -178,6 +178,9 @@ write.csv(summary_combined, file = influenza_csv_file, row.names = FALSE)
 # ----------------------------------------------------------------------------
 # --------------------Prepare Agri-Casa dataset ------------------------------
 # ----------------------------------------------------------------------------
+
+# CREATE A SYMPTOM TRACKER DATASET--------------------------------------------
+
 # Create epiweek
 agri_casa$epiweek_v_rutina <- floor_date(agri_casa$fecha_visita_vig_rut, unit = "week", week_start = 1)
 
@@ -205,13 +208,142 @@ columns_sintomas_nuevos_v_rutina <- c("sintomas_nuevos_nuevos___1",
                                       "sintomas_nuevos_nuevos___15")
 
 # Select only important columns
-agri_casa_summary <- agri_casa%>%
+agri_casa_symptom_summary <- agri_casa%>%
                     dplyr::select(realizado_vig_rut, sintoma_nuevo, epiweek_v_rutina,
                                   all_of(columns_sintomas_nuevos_v_rutina))
 
 # Save the summary dataframe
+agri_casa_symptom_csv_file <- "docs/agri_casa_symptom_summary_updated.csv"
+write.csv(agri_casa_symptom_summary, file = agri_casa_symptom_csv_file, row.names = FALSE)
+
+# CREATE A VIRUS INCIDENCE TRACKER DATASET---------------------------------------
+
+
+# Crear fecha
+agri_casa$epiweek_muestra_funsalud <-floor_date(agri_casa$fecha_recoleccion_m, unit = "week", week_start = 1)
+
+# Issue 1: How to deal with follow-up results (if sample is unprocessed or indeterminant)
+# We can create a new column for this
+create_new_column_agri_casa <- function(df, col1, col2, new_col) {
+  df[[new_col]] <- ifelse(is.na(df[[col1]]) & is.na(df[[col2]]), NA,
+                          ifelse(df[[col1]] == 1, 1,
+                                 ifelse(df[[col1]] == 2, 2,
+                                        ifelse(df[[col1]] == 3 & is.na(df[[col2]]), 3,
+                                               ifelse(df[[col1]] == 4 & is.na(df[[col2]]), 4,
+                                               # Use second result if first results are inconclusive or invalid
+                                               # If anything else, then put NA
+                                               ifelse(df[[col1]] >= 3 & !is.na(df[[col2]]), df[[col2]], NA)
+                                        )
+                                 )
+                          )
+  )
+  )
+  return(df)
+}
+
+# Columns to iterate over
+columns_to_iterate_agricasa <- list(
+  list("sars_cov2", "sarvs_cov2_repit", "sars_cov2_all_funsalud"),
+  list("inf_a", "inf_a_repit", "inf_a_all_funsalud"),
+  list("inf_b", "inf_b_repit", "inf_b_all_funsalud"),
+  list("vsr", "vsr_repit", "vsr_all_funsalud"))
+
+# Apply the function to each pair of columns
+for (cols in columns_to_iterate_agricasa) {
+  agri_casa <- create_new_column_agri_casa(agri_casa, cols[[1]], cols[[2]], cols[[3]])
+}
+
+# Create the same for the Laborotorio VSG? NO HAY NADA EN ESTA SECCION
+table(agri_casa$pcr_srv, useNA = "always")
+
+# Issue 2: What if the same individual is tested multiple times in the same week?
+# We don't care if the result is the same
+# We do care if one is positive (always prefer the positive value)
+# Since the minimum value is the preferred data type (1 = positve, 2 = negative), select for minimum value
+filter_group_slice_agri_casa <- function(data, column) {
+  data %>%
+    dplyr::filter(!is.na(!!sym(column))) %>%
+    dplyr::group_by(record_id, epiweek_muestra_funsalud) %>%
+    dplyr::slice(which.min(!!sym(column)))%>%
+    dplyr::select(c(record_id, epiweek_muestra_funsalud, column))
+}
+
+columns_to_process_agri_casa <- c("sars_cov2_all_funsalud",
+                        "inf_a_all_funsalud",
+                        "inf_b_all_funsalud",
+                        "vsr_all_funsalud")
+
+# Create a place to store summarized data
+summary_dataframes_agri_casa <- list()
+
+# Apply the function to each column and create new dataframes
+for (col in columns_to_process_agri_casa) {
+  summary_dataframes_agri_casa[[col]] <- filter_group_slice_agri_casa(agri_casa, col)
+}
+
+# Merge all dataframes together so that we have data per person per week
+merged_summary_agri_casa <- Reduce(function(x, y) merge(x, y, by = c("record_id", "epiweek_muestra_funsalud"),
+                                                        all = TRUE), summary_dataframes_agri_casa)
+
+# ISSUE 3: we also want to filter out any results where a person was positive the previous two weeks
+# We already have only ONE value per week (the minimum value)
+# We filter because we are only looking at NEW infections
+
+generate_summary_agri_casa <- function(data, column) {
+  # Ensure epiweek_muestra_funsalud is in Date format
+  data <- data %>%
+    mutate(epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud))
+  
+  # Arrange data by record_id and epiweek_muestra_funsalud
+  data <- data %>%
+    dplyr::arrange(record_id, epiweek_muestra_funsalud)
+  
+  # Create a lagged column to check the value in the previous week
+  data <- data %>%
+    group_by(record_id) %>%
+    mutate(last_record_date = lag(epiweek_muestra_funsalud, order_by = epiweek_muestra_funsalud),
+          last_record_value = lag(.data[[column]], order_by = epiweek_muestra_funsalud),
+           previous_week_date = epiweek_muestra_funsalud - 14) %>%
+    ungroup()
+  
+  # Filter out rows where a person is positive and they have tested positive in the past two weeks
+  data <- data %>%
+    filter(!((previous_week_date <= last_record_date) & last_record_value == 1 & .data[[column]] == 1))
+  
+  # Generate the summary
+  summary <- data %>%
+    group_by(epiweek_muestra_funsalud) %>%
+    summarise(
+      count_all = sum(!is.na(.data[[column]]), na.rm = TRUE),
+      count_neg = sum(.data[[column]] == 2, na.rm = TRUE),
+      count_pos = sum(.data[[column]] == 1, na.rm = TRUE),
+      count_inconcluso = sum(.data[[column]] == 3, na.rm = TRUE),
+      count_invalid = sum(.data[[column]] == 4, na.rm = TRUE),
+      pct_pos = ifelse(sum(count_neg + count_pos) == 0, 0, count_pos / sum(count_neg + count_pos, na.rm = TRUE) * 100)
+    ) %>%
+    mutate(disease = column)
+  
+  return(summary)
+}
+
+# Columns to process
+columns_to_process_agri_casa <- c("sars_cov2_all_funsalud",
+                        "inf_a_all_funsalud",
+                        "inf_b_all_funsalud",
+                        "vsr_all_funsalud")
+
+# Apply the function to each column and combine results into a long dataframe
+summary_combined_agri_casa <- lapply(columns_to_process_agri_casa,
+                                     function(col) generate_summary_agri_casa(merged_summary_agri_casa, col)) %>%
+  dplyr::bind_rows()%>%
+  tidyr::pivot_wider(names_from = disease,
+                     values_from = c(count_all, count_neg, count_pos, pct_pos))
+
+
+# Save the summary dataframe
 agri_casa_csv_file <- "docs/agri_casa_summary_updated.csv"
-write.csv(agri_casa_summary, file = agri_casa_csv_file, row.names = FALSE)
+write.csv(summary_combined_agri_casa,
+          file = agri_casa_csv_file, row.names = FALSE)
 
 # ----------------------------------------------------------------------------
 # --------------------Prepare BIOFIRE dataset ------------------------------
