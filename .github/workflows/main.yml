@@ -30,20 +30,35 @@ jobs:
         run: |
           Rscript code/redcap_data_processing.R
 
-      - name: Commit new data to repository
+      - name: Commit updated data to repository
         run: |
-          # Check if there are changes in agri_casa_summary.csv or influenza_summary.csv
-          if ! git diff --quiet --exit-code docs/agri_casa_summary_updated.csv \
-           || ! git diff --quiet --exit-code docs/influenza_summary_updated.csv \
-           || ! git diff --quiet --exit-code docs/namru_biofire_summary_updated.csv; then
+          # Check if there are changes in the CSV files
+          if git diff --quiet --exit-code docs/agri_casa_summary_updated.csv \
+             && git diff --quiet --exit-code \
+             docs/agri_casa_symptom_summary_updated.csv \
+             && git diff --quiet --exit-code docs/influenza_summary_updated.csv \
+             && git diff --quiet --exit-code docs/namru_biofire_summary_updated.csv; then
+            echo "No changes in CSV files. Skipping commit and push."
+          else
             git config --local user.name "GitHub Actions"
             git config --local user.email "actions@github.com"
             timestamp=$(date +'%Y%m%d%H%M%S')
             branch_name="update-csv-$timestamp"
             git checkout -b "$branch_name"
-            git add docs/influenza_summary_updated.csv
-            git add docs/agri_casa_summary_updated.csv
-            git add docs/namru_biofire_summary_updated.csv
+            
+            if ! git diff --quiet --exit-code docs/agri_casa_summary_updated.csv; then
+              git add docs/agri_casa_summary_updated.csv
+            fi
+            if ! git diff --quiet --exit-code docs/agri_casa_symptom_summary_updated.csv; then
+              git add docs/agri_casa_symptom_summary_updated.csv
+            fi
+            if ! git diff --quiet --exit-code docs/influenza_summary_updated.csv; then
+              git add docs/influenza_summary_updated.csv
+            fi
+            if ! git diff --quiet --exit-code docs/namru_biofire_summary_updated.csv; then
+              git add docs/namru_biofire_summary_updated.csv
+            fi
+            
             git commit -m "Update CSV files"
             git push origin "$branch_name"
             git checkout main
@@ -51,8 +66,6 @@ jobs:
             git push origin main
             git branch -d "$branch_name"
             git push origin --delete "$branch_name"
-          else
-            echo "No changes in CSV files. Skipping commit and push."
           fi
 
       - name: Deploy applications
@@ -61,4 +74,3 @@ jobs:
           r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
         run: |
           Rscript code/deploy_app.R
-
