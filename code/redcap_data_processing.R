@@ -446,9 +446,9 @@ summary_combined_agri_casa <- merge(summary_pos_agri_casa, incidence_intens_deno
 
 
 # Save the summary dataframe--------------------------------------
-agri_casa_csv_file <- "docs/agri_casa_summary_updated.csv"
+agri_casa_incidence_csv_file <- "docs/agri_casa_summary_updated.csv"
 write.csv(summary_combined_agri_casa,
-          file = agri_casa_csv_file, row.names = FALSE)
+          file = agri_casa_incidence_csv_file, row.names = FALSE)
 
 # CREATE A SYMPTOM TRACKER DATASET--------------------------------------------
 
@@ -480,13 +480,13 @@ columns_sintomas_nuevos_v_rutina <- c("sintomas_nuevos_nuevos___1",
                                       "sintomas_nuevos_nuevos___15")
 
 # Select only important columns
-agri_casa_summary <- agri_casa%>%
+agri_casa_symptom_summary <- agri_casa%>%
                     dplyr::select(realizado_vig_rut, sintoma_nuevo, epiweek_v_rutina,
                                   all_of(columns_sintomas_nuevos_v_rutina))
 
 # Save the summary dataframe
-agri_casa_csv_file <- "docs/agri_casa_summary_updated.csv"
-write.csv(agri_casa_summary, file = agri_casa_csv_file, row.names = FALSE)
+agri_casa_symptom_csv_file <- "docs/agri_casa_symptom_summary_updated"
+write.csv(agri_casa_symptom_summary, file = agri_casa_symptom_csv_file, row.names = FALSE)
 
 # ----------------------------------------------------------------------------
 # --------------------Prepare BIOFIRE dataset ------------------------------
