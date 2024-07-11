@@ -9,6 +9,7 @@ library(reactable)
 # Load dataframes ---------
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
 agri_casa_symptom_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_symptom_summary_updated.csv")
+agri_casa_incidence_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
 namru_biofire_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/namru_biofire_summary_updated.csv")
 
 # Define any needed functions -------------------------
@@ -27,13 +28,13 @@ ui_tab1 <- function() {
   fluidRow(
     column(6,
            # Dropdown menu for selecting disease
-           radioButtons("virus", "Virus Incidence:",
+           radioButtons("virus", "Virus:",
                         c("Influenza A" = "resul_inf_a_all",
                           "Influenza B" = "resul_inf_b_all",
-                          "RSV" = "resul_rsv_all",
+                          "VSR" = "resul_rsv_all",
                           "SARS-CoV-2 confirmado por PCR" = "resul_sars_all",
                           "SARS-CoV-2 confirmado por prueba rápida de antígenos" = "resul_covid_19_all",
-                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all")),
+                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all"))
     ),
     column(6,
            # Date range input
@@ -47,8 +48,6 @@ ui_tab1 <- function() {
   )
 }
 
-
-
 # Define UI for Tab 2
 ui_tab2 <- function() {
   fluidPage(
@@ -56,6 +55,17 @@ ui_tab2 <- function() {
     
     sidebarLayout(
       sidebarPanel(
+        dateRangeInput(
+          "date_range_input_tab2",
+          "Filtra período del tiempo:",
+          start = "2023-10-02",
+          end = Sys.Date()
+        ),
+        # Add the virus selection and date range input similar to Tab 1
+        radioButtons("virus_agri", "Virus:",
+                     c("SARS-CoV-2" = "sars_cov2_all",
+                       "Influenza" = "influenza_all",
+                       "VSR" = "vsr_all")),
         selectInput(
           "columns_selected",
           "Elige sintomas:",
@@ -77,19 +87,17 @@ ui_tab2 <- function() {
           selected = NULL,
           multiple = TRUE
         ),
-        dateRangeInput(
-          "date_range_input_tab2",
-          "Filtra período del tiempo:",
-          start = "2023-10-02",
-          end = Sys.Date()
-        )
       ),
       mainPanel(
-        plotOutput("disease_plot_tab2")
+        fluidRow(
+          column(12, plotOutput("incidence_plot_tab2")),  # Existing plot for symptoms
+          column(12, plotOutput("symptoms_plot_tab2"))  # New plot similar to Tab 1
+        )
       )
     )
   )
 }
+
 
 # Define UI for Tab 3
 ui_tab3 <- function() { 
@@ -134,10 +142,10 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   # Influenza -----------------------------------------------------------------------
-
+  
   # Reactive expression to filter data based on selected disease and date range
   filtered_data <- reactive({
-
+    
     # Filter data based on selected date range
     subset(influenza_summary, epiweek_recolec >= input$date_range_input_tab1[1] & 
              epiweek_recolec <= input$date_range_input_tab1[2])
@@ -152,7 +160,7 @@ server <- function(input, output) {
     
     virus_labels <- c("resul_inf_a_all" = "Influenza A",
                       "resul_inf_b_all" = "Influenza B",
-                      "resul_rsv_all" = "RSV",
+                      "resul_rsv_all" = "VSR",
                       "resul_sars_all" = "SARS-CoV-2 confirmado por PCR",
                       "resul_covid_19_all" = "SARS-CoV-2 confirmado por prueba rápida de antígenos", 
                       "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
@@ -162,7 +170,7 @@ server <- function(input, output) {
       dplyr::mutate(epiweek_recolec_date = as.Date(epiweek_recolec),
                     count_all_column_name = ifelse(is.na(count_all_column_name), 0, count_all_column_name)
       )%>%
-    ggplot(aes(x = epiweek_recolec_date)) +
+      ggplot(aes(x = epiweek_recolec_date)) +
       geom_bar(aes(y = .data[[count_all_column_name]], fill = "Total"), stat = "identity") +
       geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Prueba Positiva"), stat = "identity") +
       scale_fill_manual(values = c("Total" = "grey", "Prueba Positiva" = "red")) +
@@ -185,8 +193,47 @@ server <- function(input, output) {
     
   })
   
-# Agri-Casa -----------------------------------------------------------------------
+  # Agri-Casa Incidence-----------------------------------------------------------------------
+  
+  # Reactive expression to filter data based on selected disease and date range
+  filtered_agri_incidence <- reactive({
+    # Filter data based on selected date range
+    subset(agri_casa_incidence_summary, epiweek_muestra_funsalud >= input$date_range_input_tab2[1] & 
+             epiweek_muestra_funsalud <= input$date_range_input_tab2[2])
+  })
+  
+  # Render the plot based on filtered data
+  output$incidence_plot_tab2 <- renderPlot({
+    filtered_agri <- filtered_agri_incidence()
+    count_pos_column_name_agri <- paste0(input$virus_agri)
 
+    virus_labels_agri <- c("sars_cov2_all" = "SARS-CoV-2",
+                           "influenza_all" = "Influenza",
+                           "vsr_all" = "VSR")
+    selected_virus_label_agri <- virus_labels_agri[[input$virus_agri]]
+    
+    filtered_agri %>%
+      dplyr::mutate(epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud)) %>%
+      ggplot(aes(x = epiweek_muestra_funsalud)) +
+      geom_bar(aes(y = denominator, fill = "Total"), stat = "identity") +
+      geom_bar(aes(y = .data[[count_pos_column_name_agri]], fill = "Prueba Positiva"), stat = "identity") +
+      scale_fill_manual(values = c("Total" = "grey", "Prueba Positiva" = "red")) +
+      theme_classic() +
+      theme(
+        legend.position = "top",
+        plot.margin = margin(10, 10, 10, 10)
+      ) +
+      labs(title = paste("Resultados de Pruebas de", selected_virus_label_agri),
+           x = "Epiweek (Semana cuando se detectó la infección por primera vez)",
+           y = "Número de individuos probados",
+           fill = "Resultado") +
+      scale_y_continuous(breaks = seq(0, max(filtered_agri$denominator, na.rm=TRUE), by = 1)) +
+      scale_x_date(labels = format_date_spanish, limits = as.Date(c(input$date_range_input_tab2[1], input$date_range_input_tab2[2])))
+  }, width = 500, height = 400)
+  
+  
+  # Agri-Casa Symptoms-----------------------------------------------------------------------
+  
   # Reactive expression for Agri-Casa data filtering
   filtered_data_tab2 <- reactive({
     agri_casa_symptom_summary %>%
@@ -195,7 +242,7 @@ server <- function(input, output) {
       filter(!is.na(epiweek_v_rutina))
   })
   
-  output$disease_plot_tab2 <- renderPlot({
+  output$symptoms_plot_tab2 <- renderPlot({
     req(input$columns_selected)  # Ensure columns are selected
     
     agri_casa_simptomas <- filtered_data_tab2() %>%
@@ -218,12 +265,12 @@ server <- function(input, output) {
         x = "Semana",
         y = "Número de individuos experimentando estos síntomas"
       ) +
-      theme_minimal()+
-      scale_x_date(labels = format_date_spanish)
-  })
-  
-# Biofire--------------------------------------------------------------------------
+      theme_classic()+
+      scale_x_date(labels = format_date_spanish, limits = as.Date(c(input$date_range_input_tab2[1], input$date_range_input_tab2[2])))
+  }, width = 500, height = 300)
 
+  # Biofire--------------------------------------------------------------------------
+  
   filtered_biofire_data <- reactive({
     time_period <- switch(input$tab3_time_filter,
                           month = 30,
@@ -245,7 +292,7 @@ server <- function(input, output) {
   output$table_tab3 <- renderReactable({
     reactable(filtered_biofire_data())
   })
-
+  
   
 }
 
