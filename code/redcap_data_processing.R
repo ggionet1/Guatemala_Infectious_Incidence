@@ -314,7 +314,7 @@ first_intensive_df$date_positive_intens <- ifelse(!is.na(first_intensive_df$fech
                                                   ifelse( !is.na(first_intensive_df$fecha_visit_intens), 
                                                           first_intensive_df$fecha_visit_intens, NA))
 
-first_intensive_df$date_positive_intens <- as.Date(first_intensive_df$date_positive_intens)
+first_intensive_df$date_positive_intens <- as.Date(first_intensive_df$date_positive_intens, origin = "1970-01-01")
 
 # Create an epiweek column to obscure personal protective information
 first_intensive_df$epiweek_positive_intes <- floor_date(first_intensive_df$date_positive_intens, unit = "week", week_start = 1)
@@ -338,7 +338,7 @@ incidence_intens_denominator <- agri_casa%>%
 incidence_intens_denominator_count <- incidence_intens_denominator%>%
   mutate(date_denominator = ifelse(realizado_vig_rut==1, fecha_visita_vig_rut,
                                                         ifelse(se_realizo_visit_intens==1, fecha_visit_intens, NA)),
-         epiweek_denominator = floor_date(as.Date(date_denominator), unit = "week", week_start = 1))%>%
+         epiweek_denominator = floor_date(as.Date(date_denominator, origin = "1970-01-01"), unit = "week", week_start = 1))%>%
   # select one row per individual per week
   dplyr::group_by(record_id, epiweek_denominator)%>%
   dplyr::slice(1)%>%
@@ -393,7 +393,7 @@ pcr_intens_visit_incidence_summary <- pcr_intens_visit_incidence_summary_pre%>%
 generate_summary_agri_casa <- function(data, column) {
   # Ensure epiweek_muestra_funsalud is in Date format
   data <- data %>%
-    mutate(epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud))
+    mutate(epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud, origin = "1970-01-01"))
   
   # Arrange data by record_id and epiweek_muestra_funsalud
   data <- data %>%
@@ -442,14 +442,13 @@ summary_combined_agri_casa <- merge(summary_pos_agri_casa, incidence_intens_deno
   dplyr::filter(! is.na(epiweek_muestra_funsalud))%>%
   # NAs should be 0 because if NA, means no disease detected that week
   mutate(across(everything(), ~ ifelse(is.na(.), 0, .)),
-         epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud))
+         epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud, origin = "1970-01-01"))
 
 
 # Save the summary dataframe--------------------------------------
 agri_casa_csv_file <- "docs/agri_casa_summary_updated.csv"
 write.csv(summary_combined_agri_casa,
           file = agri_casa_csv_file, row.names = FALSE)
-
 
 # CREATE A SYMPTOM TRACKER DATASET--------------------------------------------
 
