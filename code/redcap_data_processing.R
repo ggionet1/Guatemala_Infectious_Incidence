@@ -13,6 +13,8 @@ install.packages("lubridate", repos = "http://cran.us.r-project.org")
 install.packages("purr", repos = "http://cran.us.r-project.org")
 install.packages("ggrepel", repos = "http://cran.us.r-project.org")
 install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("digest", repos = "http://cran.us.r-project.org")
+
 
 # Load libraries
 library(remotes)
@@ -23,6 +25,7 @@ library(lubridate)
 library(purrr)
 library(ggrepel)
 library(dplyr)
+library(digest)
 
 # If running locally, your API token will be stored here:
 # usethis::edit_r_environ()
@@ -33,6 +36,8 @@ library(dplyr)
 agri_casa_token <- Sys.getenv("agri_casa_token")
 namru_biofire_token <- Sys.getenv("namru_biofire_token")
 influenza_token <- Sys.getenv("influenza_token")
+salt_token <- Sys.getenv("salt_token")
+
 
 uri <- "https://redcap.ucdenver.edu/api/"
 
@@ -437,56 +442,151 @@ summary_pos_agri_casa <- lapply(columns_to_process_agri_casa,
 
 
 # Combine the denominator by epiweek with the positive cases-----------
-summary_combined_agri_casa <- merge(summary_pos_agri_casa, incidence_intens_denominator_count,
+summary_pos_denom_agri_casa <- merge(summary_pos_agri_casa, incidence_intens_denominator_count,
                                     by.x="epiweek_muestra_funsalud", by.y="epiweek_denominator", all=TRUE)%>%
   dplyr::filter(! is.na(epiweek_muestra_funsalud))%>%
   # NAs should be 0 because if NA, means no disease detected that week
   mutate(across(everything(), ~ ifelse(is.na(.), 0, .)),
-         epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud, origin = "1970-01-01"))
+         epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud, origin = "1970-01-01"))%>%
+  # Create overall virus of interest counter
+  mutate(virus_all = rowSums(across(c(sars_cov2_all, influenza_all, vsr_all)), na.rm = TRUE))
 
 
-# Save the summary dataframe--------------------------------------
-agri_casa_incidence_csv_file <- "docs/agri_casa_summary_updated.csv"
-write.csv(summary_combined_agri_casa,
-          file = agri_casa_incidence_csv_file, row.names = FALSE)
 
-# CREATE A SYMPTOM TRACKER DATASET--------------------------------------------
-
-                
+# Look at ILI syndrome counts--------------------------------------
 # Create epiweek
 agri_casa$epiweek_v_rutina <- floor_date(agri_casa$fecha_visita_vig_rut, unit = "week", week_start = 1)
 
+
+# Create a dataset for ILI syndromic illness (difficulty breathing, fever, cough)
+# We need to match the symptoms in the routine visits with the symptoms in the intensive visits
+agri_symptoms_ILI <- agri_casa%>%
+    dplyr::select("record_id",
+                  "fecha_visita_vig_rut",
+                  "realizado_vig_rut",
+                  "fecha_visit_intens",
+                  "se_realizo_visit_intens",
+                  "tos_visit_ints",
+                  "tos_flm_visit_ints",
+                  "sensa_fiebre_visit_ints",
+                  "falta_aire_visit_ints",
+                  "tos_vig_rut",
+                  "fiebre_vig_rut",
+                  "dif_resp_vig_rut")%>%
+  # only those with data are included
+  dplyr::filter(se_realizo_visit_intens == 1 | realizado_vig_rut == 1)%>%
+  # create an epiweek variable
+  mutate(date_symptoms = ifelse(realizado_vig_rut==1 & is.na(se_realizo_visit_intens), fecha_visita_vig_rut,
+                                   ifelse(se_realizo_visit_intens==1 & is.na(realizado_vig_rut), fecha_visit_intens, NA)),
+         epiweek_symptoms = floor_date(as.Date(date_symptoms, origin = "1970-01-01"), unit = "week", week_start = 1))%>%
+  dplyr::group_by(epiweek_symptoms)%>%
+  dplyr::summarise(tos_count = n_distinct(record_id[tos_visit_ints >= 2 | tos_flm_visit_ints >= 2 | tos_vig_rut == 1]),
+                   fiebre_count = n_distinct(record_id[sensa_fiebre_visit_ints >= 2 | fiebre_vig_rut == 1]),
+                   falta_aire_count = n_distinct(record_id[falta_aire_visit_ints >= 2 | dif_resp_vig_rut == 1]),
+                   total_ili_count = n_distinct(record_id[tos_visit_ints >= 2 | tos_flm_visit_ints >= 2 | tos_vig_rut == 1 |
+                                                            sensa_fiebre_visit_ints >= 2 | fiebre_vig_rut == 1 |
+                                                            falta_aire_visit_ints >= 2 | dif_resp_vig_rut == 1]))
+
+
+
+# Combine with testing data and denominators
+summary_combined_agri_casa <- merge(summary_pos_denom_agri_casa, agri_symptoms_ILI,
+                                    by.x="epiweek_muestra_funsalud", by.y="epiweek_symptoms", all=TRUE)
+
+# Save the summary dataframe--------------------------------------
+agri_casa_csv_file <- "docs/agri_casa_summary_updated.csv"
+write.csv(summary_combined_agri_casa,
+          file = agri_casa_csv_file, row.names = FALSE)
+
+
+# CREATE A SYMPTOM TRACKER DATASET--------------------------------------------
+
+# The goal here is to look at how many people have experienced the following symptoms in the last 24 hours
+# Please note that this does not mean NEW symptoms; symptoms could have carried over from the last week
 columns_sintomas_vigilancia_rutina <- c("tos_vig_rut", "dol_gargan_vig_rut", "dol_cabeza_vig_rut",
                                         "cong_nasal_vig_rut", "fiebre_vig_rut", "dol_cuerp_musc_vig_rut",
                                         "fatica_vig_rut", "vomitos_vig_rut", "diarrea_vig_rut",
                                         "dif_resp_vig_rut", "perd_olf_gust_vig_rut", "nausea_vig_rut",
                                         "sibilancias_vig_rut", "mala_alim_vig_rut", "letargo_vig_rut")
 
-# New symptoms only
-columns_sintomas_nuevos_v_rutina <- c("sintomas_nuevos_nuevos___1",
-                                      "sintomas_nuevos_nuevos___2",
-                                      "sintomas_nuevos_nuevos___3",
-                                      "sintomas_nuevos_nuevos___4",
-                                      "sintomas_nuevos_nuevos___5",
-                                      "sintomas_nuevos_nuevos___6",
-                                      "sintomas_nuevos_nuevos___7",
-                                      "sintomas_nuevos_nuevos___8",
-                                      "sintomas_nuevos_nuevos___9",
-                                      "sintomas_nuevos_nuevos___10",
-                                      "sintomas_nuevos_nuevos___11",
-                                      "sintomas_nuevos_nuevos___12",
-                                      "sintomas_nuevos_nuevos___13",
-                                      "sintomas_nuevos_nuevos___14",
-                                      "sintomas_nuevos_nuevos___15")
+columns_sintomas_v_intens <- c("tos_visit_ints",
+                               "tos_flm_visit_ints",
+                               "gargt_irrit_visit_ints",
+                               "dlr_cabeza_visit_ints",
+                               "congest_nasal_visit_ints",
+                               "sensa_fiebre_visit_ints",
+                               "dlr_cuerp_dgnl_visit_ints",
+                               "fatiga_visit_ints",
+                               "dlr_cuello_visit_ints",
+                               "interrup_sue_visit_ints",
+                               "silbd_resp_visit_ints",
+                               "falta_aire_visit_ints",
+                               "perd_apet_visit_ints",
+                               "nausea_visit_ints",
+                               "diarrea_visit_ints",
+                               "vomito_visit_ints",
+                               "dism_gust_visit_ints",
+                               "dism_olf_visit_ints",
+                               "dism_aud_visit_ints",
+                               "dism_bal_visit_ints",
+                               "mala_alim_visit_ints",
+                               "letargo_visit_ints"
+)
 
-# Select only important columns
-agri_casa_symptom_summary <- agri_casa%>%
-                    dplyr::select(realizado_vig_rut, sintoma_nuevo, epiweek_v_rutina,
-                                  all_of(columns_sintomas_nuevos_v_rutina))
+# Select only relevant symptoms (recorded in intensive and routine visits)
+agri_casa_symptoms <- agri_casa%>%
+  dplyr::select(c("record_id",
+                  fecha_visita_vig_rut,
+                  realizado_vig_rut,
+                  fecha_visit_intens,
+                  se_realizo_visit_intens,
+                  all_of(columns_sintomas_vigilancia_rutina),
+                  all_of(columns_sintomas_v_intens)))%>%
+  dplyr::filter(se_realizo_visit_intens == 1 | realizado_vig_rut == 1)%>%
+  # create an epiweek variable
+  mutate(date_symptoms = ifelse(realizado_vig_rut==1 & is.na(se_realizo_visit_intens), fecha_visita_vig_rut,
+                                ifelse(se_realizo_visit_intens==1 & is.na(realizado_vig_rut), fecha_visit_intens, NA)),
+         epiweek_symptoms = floor_date(as.Date(date_symptoms, origin = "1970-01-01"), unit = "week", week_start = 1))
 
-# Save the summary dataframe
-agri_casa_symptom_csv_file <- "docs/agri_casa_symptom_summary_updated"
-write.csv(agri_casa_symptom_summary, file = agri_casa_symptom_csv_file, row.names = FALSE)
+
+# ISSUE 6: We don't know what someone will choose on the symptom tracker (there are a lot of possible combinations!)
+# Need to save the dataset by individual, as one individual can have more than one of the symptoms specified here at the same time
+# Otherwise, we would double-count that person.
+# However the epiweek denominator shouldn't change, so we will want to export that in our summary dataset just for ease
+# Add denominator -----------------------------------
+agri_casa_symptoms_summary = merge(agri_casa_symptoms, incidence_intens_denominator_count,
+                                   by.x="epiweek_symptoms", by.y="epiweek_denominator", all=TRUE)%>%
+  dplyr::filter(! is.na(epiweek_symptoms))%>%
+  # NAs should be 0 because if NA, means no disease detected that week
+  mutate(across(everything(), ~ ifelse(is.na(.), 0, .)),
+         epiweek_symptoms = as.Date(epiweek_symptoms, origin = "1970-01-01"))%>%
+  # Eliminate dates if possible
+  dplyr::select(-c(fecha_visita_vig_rut, realizado_vig_rut, fecha_visit_intens, se_realizo_visit_intens))
+
+
+# NOTE: we did not include individuals who went through the seguimiento largo, per Dan's thoughts that
+# there were not many illnesses there or symptoms.
+# if we need to increase our denominator, it would be most accurate to use data from the seguimiento largo
+# however, in theory, it should not change the overall positivity rate of symptoms 
+# (only some participants are at risk of disease and population should be equal to vigilancia de rutina)
+
+
+# For additional data security, we will re-code participants-----------------------
+
+# Hash the record_id column to create anonymized IDs
+# We use the sha256 algorithm because it is deterministic but obscures similarities between individual IDs
+agri_casa_symptoms_summary_anonymized <- agri_casa_symptoms_summary %>%
+  mutate(
+    anonymized_id = sapply(record_id, function(x) digest::digest(x, algo = "sha256"))
+  )%>%
+  dplyr::select(-record_id)
+
+
+# Save the summary dataframe------------------------------------
+# agri_casa_symptom_csv_file <- "/Users/gabigionet/Library/CloudStorage/OneDrive-UCB-O365/PhD_Projects/Trifinio/Guatemala_Infectious_Incidence/docs/agri_casa_symptom_summary_updated.csv"
+agri_casa_symptom_csv_file <- "docs/agri_casa_symptom_summary_updated.csv"
+write.csv(agri_casa_symptoms_summary_anonymized, file = agri_casa_symptom_csv_file, row.names = FALSE)
+
 
 # ----------------------------------------------------------------------------
 # --------------------Prepare BIOFIRE dataset ------------------------------
