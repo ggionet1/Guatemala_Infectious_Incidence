@@ -20,6 +20,74 @@ format_date_spanish <- function(x) {
   paste(months[as.numeric(format(x, "%m"))], format(x, "\n %Y"), sep = " ")
 }
 
+# Define any variables needed for both server and ui ------------
+
+# Mapping of symptoms to their corresponding columns
+# Symptom mapping with formatted names
+symptom_map <- list(
+  "Tos" = c("tos_visit_ints >= 2", "tos_flm_visit_ints >= 2", "tos_vig_rut == 1"),
+  "Fiebre" = c("sensa_fiebre_visit_ints >= 2", "fiebre_vig_rut == 1"),
+  "Falta de Aire" = c("falta_aire_visit_ints >= 2", "dif_resp_vig_rut == 1"),
+  "Dolor de Garganta" = c("gargt_irrit_visit_ints >= 2", "dol_gargan_vig_rut == 1"),
+  "Dolor de Cabeza" = c("dlr_cabeza_visit_ints >= 2", "dol_cabeza_vig_rut == 1"),
+  "Congestión Nasal" = c("congest_nasal_visit_ints >= 2", "cong_nasal_vig_rut == 1"),
+  "Dolor de Cuerpo" = c("dlr_cuerp_dgnl_visit_ints >= 2", "dol_cuerp_musc_vig_rut == 1"),
+  "Fatiga" = c("fatiga_visit_ints >= 2", "fatica_vig_rut == 1"),
+  "Silbidos al Respirar" = c("silbd_resp_visit_ints >= 2", "sibilancias_vig_rut == 1"),
+  "Náuseas" = c("nausea_visit_ints >= 2", "nausea_vig_rut == 1"),
+  "Diarrea" = c("diarrea_visit_ints >= 2", "diarrea_vig_rut == 1"),
+  "Vómitos" = c("vomito_visit_ints >= 2", "vomitos_vig_rut == 1"),
+  "Pérdida de Olfato/Gusto" = c("dism_gust_visit_ints >= 2", "dism_olf_visit_ints >= 2", "perd_olf_gust_vig_rut == 1"),
+  "Pérdida de Audición/Balance" = c("dism_aud_visit_ints >= 2", "dism_bal_visit_ints >= 2"),
+  "Mala Alimentación" = c("mala_alim_visit_ints >= 2", "mala_alim_vig_rut == 1"),
+  "Letargo" = c("letargo_visit_ints >= 2", "letargo_vig_rut == 1")
+)
+
+# Vector mapping column names to pathogen names
+pathogen_names <- c(
+  "patogenos_positivos_sangre___1" = "Chikungunya",
+  "patogenos_positivos_sangre___2" = "Fiebre hemorrágica de Crimean-Congo",
+  "patogenos_positivos_sangre___3" = "Dengue",
+  "patogenos_positivos_sangre___4" = "Ebola",
+  "patogenos_positivos_sangre___5" = "Lassa",
+  "patogenos_positivos_sangre___6" = "Marburg",
+  "patogenos_positivos_sangre___7" = "West Nile",
+  "patogenos_positivos_sangre___8" = "Fiebre amarilla",
+  "patogenos_positivos_sangre___9" = "Zika",
+  "patogenos_positivos_sangre___10" = "Bacillus anthracis",
+  "patogenos_positivos_sangre___11" = "Francisella tularensis",
+  "patogenos_positivos_sangre___12" = "Leptospira spp.",
+  "patogenos_positivos_sangre___13" = "Salmonella enterica serovar Typhi",
+  "patogenos_positivos_sangre___14" = "Salmonella enterica serovar Paratyphi A",
+  "patogenos_positivos_sangre___15" = "Yersinia pestis",
+  "patogenos_positivos_sangre___16" = "Leishmania spp.",
+  "patogenos_positivos_sangre___17" = "Plasmodium spp.",
+  "patogenos_positivos_sangre___18" = "P. falciparum",
+  "patogenos_positivos_sangre___19" = "P. vivax/ovale",
+  "patogenos_positivos_hisnaso___1" = "Adenovirus",
+  "patogenos_positivos_hisnaso___2" = "Coronavirus HKU1",
+  "patogenos_positivos_hisnaso___3" = "Coronavirus NL63",
+  "patogenos_positivos_hisnaso___4" = "Coronavirus 229E",
+  "patogenos_positivos_hisnaso___5" = "Coronavirus OC43",
+  "patogenos_positivos_hisnaso___6" = "Metapneumovirus humano",
+  "patogenos_positivos_hisnaso___7" = "Human Rhinovirus/ Enterovirus",
+  "patogenos_positivos_hisnaso___8" = "Influenza A",
+  "patogenos_positivos_hisnaso___9" = "Influenza A/H1",
+  "patogenos_positivos_hisnaso___10" = "Influenza A/H1-2009",
+  "patogenos_positivos_hisnaso___11" = "Influenza A/H3",
+  "patogenos_positivos_hisnaso___12" = "Influenza B",
+  "patogenos_positivos_hisnaso___13" = "Parainfluenza 1",
+  "patogenos_positivos_hisnaso___14" = "Parainfluenza 2",
+  "patogenos_positivos_hisnaso___15" = "Parainfluenza 3",
+  "patogenos_positivos_hisnaso___16" = "Parainfluenza 4",
+  "patogenos_positivos_hisnaso___17" = "Virus Sincitial Respiratorio",
+  "patogenos_positivos_hisnaso___18" = "Bordetella pertussis",
+  "patogenos_positivos_hisnaso___19" = "Chlamydophila pneumonia",
+  "patogenos_positivos_hisnaso___20" = "Mycoplasma pneumoniae",
+  "patogenos_positivos_hisnaso___21" = "Severe Acute Respiratory Syndrome Coronavirus 2 (SARS-CoV-2)"
+)
+
+
 # ------------------------------------------------------
 # Define UI for random distribution app ----
 # Sidebar layout with input and output definitions ----
@@ -49,7 +117,9 @@ ui_tab1 <- function() {
   )
 }
 
+
 # Define UI for Tab 2
+
 ui_tab2 <- function() {
   fluidPage(
     titlePanel("Enfermedades Respiratorias: síntomas y número de personas con resultados positivos"),
@@ -68,36 +138,16 @@ ui_tab2 <- function() {
                        "Influenza" = "influenza_all",
                        "VSR" = "vsr_all",
                        "Todos" = "virus_all")),
-        selectInput(
-          "columns_selected",
-          "Elige sintomas:",
-          choices = c("Tos" = "tos_count",
-                      "Fiebre o Sensación de Fiebre" = "fiebre_count",
-                      "Dificultad de Respirar" = "falta_aire_count",
-                      "Dolor de garganta" = "garganta_count",
-                      "Dolor de cabeza" = "cabeza_count",
-                      "Congestión nasal" = "congest_nasal_count",
-                      "Dolor de cuerpo" = "dlr_cuerp_count",
-                      "Fatiga" = "fatiga_count",
-                      # "Dolor de cuello" = "cuello_count",
-                      # "Interrupción del sueño" = "interrup_sue_count",
-                      "Silbancias" = "silbilancias_count",
-                      # "Perdida de apetito" = "perd_apet_count",
-                      "Nausea" = "nausea_count",
-                      "Diarrea" = "diarrea_count",
-                      "Vómito" = "vomito_count",
-                      "Perdida del olfato o del gusto" = "perd_olf_gust_count",
-                      "Disminución de audición o equilibrio" = "perd_aud_bal_count",
-                      "Mala alimentación" = "mala_alim_count",
-                      "Létargo" = "letargo_alim_count"),
-          selected = NULL,
-          multiple = TRUE
+          # Checkboxes for symptom selection
+          checkboxGroupInput("symptoms", "Seleccionar Síntomas:",
+                             choices = names(symptom_map),
+                             selected = NULL)  # Initially no symptoms selected
         ),
-      ),
       mainPanel(
         fluidRow(
-          column(12, plotOutput("incidence_plot_tab2")),  # Existing plot for symptoms
-          column(12, plotOutput("symptoms_plot_tab2"))  # New plot similar to Tab 1
+          column(12, plotOutput("pct_plot_tab2")),  # Combined percentage incident symptom plot
+          column(12, plotOutput("incidence_plot_tab2")),  #  Incidence count plot
+          column(12, plotOutput("symptoms_plot_tab2"))  # Symptom count plot
         )
       )
     )
@@ -210,9 +260,14 @@ server <- function(input, output) {
   
   # Render the plot based on filtered data
   output$incidence_plot_tab2 <- renderPlot({
+    
+    # Load dataset
     filtered_agri <- filtered_agri_incidence()
+    
+    # For code
     count_pos_column_name_agri <- paste0(input$virus_agri)
 
+    # For labels
     virus_labels_agri <- c("sars_cov2_all" = "SARS-CoV-2",
                            "influenza_all" = "Influenza",
                            "vsr_all" = "VSR",
@@ -222,81 +277,190 @@ server <- function(input, output) {
     filtered_agri %>%
       dplyr::mutate(epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud)) %>%
       ggplot(aes(x = epiweek_muestra_funsalud)) +
-      geom_bar(aes(y = denominator, fill = "Total"), stat = "identity") +
-      geom_bar(aes(y = total_ili_count, fill = "Sintomas detectados de tos, \n fiebre, \n o falta de aire"), stat = "identity") +
-      geom_bar(aes(y = .data[[count_pos_column_name_agri]], fill = "Primera Prueba Positiva"), stat = "identity") +
-      scale_fill_manual(values = c("Total" = "grey", "Prueba Positiva" = "red", "Sintomas detectados de tos, \n fiebre, \n o falta de aire" = "orange")) +
+      geom_bar(aes(y = denominator, fill = "Total"), stat = "identity", color="black") +
+      geom_bar(aes(y = total_ili_count, fill = "Experimentan tos, fiebre, \n o falta de aire"), stat = "identity", color="black") +
+      geom_bar(aes(y = .data[[count_pos_column_name_agri]], fill = "Primera Prueba Positiva"), stat = "identity", color="black") +
+      scale_fill_manual(values = c("Total" = "grey", "Primera Prueba Positiva" = "red", "Experimentan tos, fiebre, \n o falta de aire" = "orange")) +
       theme_classic() +
       theme(
         legend.position = "top",
         plot.margin = margin(10, 10, 10, 10)
       ) +
-      labs(title = paste("Resultados de Pruebas de", selected_virus_label_agri),
+      labs(title = paste("Número de individuos \n por semana en la Vigilancia de Rutina \n o Vigilancia Intensa con", selected_virus_label_agri),
            x = "Epiweek (Semana cuando se detectó la infección por primera vez)",
            y = "Número de individuos",
-           fill = "Resultado") +
+           fill = "") +
       scale_y_continuous(breaks = seq(0, max(filtered_agri$denominator, na.rm=TRUE), by = 25)) +
       scale_x_date(labels = format_date_spanish, limits = as.Date(c(input$date_range_input_tab2[1], input$date_range_input_tab2[2])))
   }, width = 500, height = 400)
   
   
   # Agri-Casa Symptoms-----------------------------------------------------------------------
-  
-  
-  
-  # Mapping of symptoms to their corresponding columns
-  symptom_map <- list(
-    "tos_count" = c("tos_visit_ints >= 2", "tos_flm_visit_ints >= 2", "tos_vig_rut == 1"),
-    "fiebre_count" = c("sensa_fiebre_visit_ints >= 2", "fiebre_vig_rut == 1"),
-    "falta_aire_count" = c("falta_aire_visit_ints >= 2", "dif_resp_vig_rut == 1"),
-    "garganta_count" = c("gargt_irrit_visit_ints >= 2", "dol_gargan_vig_rut == 1"),
-    "cabeza_count" = c("dlr_cabeza_visit_ints >= 2", "dol_cabeza_vig_rut == 1"),
-    "congest_nasal_count" = c("congest_nasal_visit_ints >= 2", "cong_nasal_vig_rut == 1"),
-    "dlr_cuerp_count" = c("dlr_cuerp_dgnl_visit_ints >= 2", "dol_cuerp_musc_vig_rut == 1"),
-    "fatiga_count" = c("fatiga_visit_ints >= 2", "fatica_vig_rut == 1"),
-    "silbilancias_count" = c("silbd_resp_visit_ints >= 2", "sibilancias_vig_rut == 1"),
-    "nausea_count" = c("nausea_visit_ints >= 2", "nausea_vig_rut == 1"),
-    "diarrea_count" = c("diarrea_visit_ints >= 2", "diarrea_vig_rut == 1"),
-    "vomito_count" = c("vomito_visit_ints >= 2", "vomitos_vig_rut == 1"),
-    "perd_olf_gust_count" = c("dism_gust_visit_ints >= 2", "dism_olf_visit_ints >= 2", "perd_olf_gust_vig_rut == 1"),
-    "perd_aud_bal_count" = c("dism_aud_visit_ints >= 2", "dism_bal_visit_ints >= 2"),
-    "mala_alim_count" = c("mala_alim_visit_ints >= 2", "mala_alim_vig_rut == 1"),
-    "letargo_alim_count" = c("letargo_visit_ints >= 2", "letargo_vig_rut == 1")
-  )
-  
-  # Reactive expression for Agri-Casa data filtering
-  
+  # Reactive expression for filtered data
   filtered_data_tab2 <- reactive({
     
-    agri_casa_symptom_summary %>%
-      filter(epiweek_symptoms >= input$date_range_input_tab2[1] & epiweek_symptoms <= input$date_range_input_tab2[2]) %>%
-      filter(!is.na(epiweek_symptoms))%>%
+    selected_symptoms <- input$symptoms
+    
+    # Filter data based on selected symptoms
+    filtered <- agri_casa_symptom_summary %>%
+      filter(!is.na(epiweek_symptoms))  # Ensure epiweek_symptoms are not NA
+    
+    # Combine conditions for selected symptoms
+    conditions_list <- lapply(selected_symptoms, function(symptom) {
+      symptom_conditions <- symptom_map[[symptom]]
+      paste(symptom_conditions, collapse = " | ")
+    })
+    
+    conditions <- paste(unlist(conditions_list), collapse = " | ")
+    
+    # Count number of distinct anonymized_ids where any condition is met for the selected symptoms
+    counts <- filtered %>%
       group_by(epiweek_symptoms) %>%
-      summarise(count = n_distinct(anonymized_id[rowSums(sapply(input$symptoms, function(symptom) {
-        eval(parse(text = paste(symptom_map[[symptom]], collapse = " | ")))
-      })) > 0]),
-      epiweek_denominator = epiweek_denominator)
+      summarise(count = sum(rowSums(sapply(conditions, function(cond) eval(parse(text = cond))), na.rm = TRUE) > 0, na.rm = TRUE)) %>%
+      mutate(count = replace(count, is.na(count), 0))  # Replace NA with 0
+    
+    # Merge with original data to ensure all epiweek_symptoms are retained
+    all_weeks <- agri_casa_symptom_summary %>%
+      distinct(epiweek_symptoms)  # Get all unique epiweek_symptoms
+    
+    counts <- left_join(all_weeks, counts, by = "epiweek_symptoms") %>%
+      mutate(count = replace(count, is.na(count), 0))  # Replace NA with 0
+    
+    # Merge with denominator from agri_casa_symptom_summary
+    counts_w_denom <- left_join(counts, 
+                                     (agri_casa_symptom_summary %>% 
+                                        dplyr::select(epiweek_symptoms, denominator)%>%
+                                        dplyr::distinct(epiweek_symptoms, denominator, .keep_all = TRUE)), by = "epiweek_symptoms")
+    
+
+    return(counts_w_denom)
   })
   
+  # Render plot based on filtered data
   output$symptoms_plot_tab2 <- renderPlot({
-    req(input$columns_selected)  # Ensure columns are selected
+    req(input$symptoms)  # Ensure symptoms are selected
     
     agri_casa_simptomas <- filtered_data_tab2()
     
-    agri_casa_simptomas%>%
-      dplyr::mutate(epiweek_denominator = as.Date(epiweek_denominator))%>%
-      ggplot(aes(x = epiweek_muestra_funsalud)) +
-      geom_bar(aes(y = count, fill = "Experimentan Síntomas"), stat = "identity") +
-      geom_bar(aes(y = epiweek_denominator, fill = "Total"), stat = "identity") +
-        labs(
+    # Plot
+    agri_casa_simptomas %>%
+      mutate(epiweek_symptoms = as.Date(epiweek_symptoms)) %>%
+      ggplot(aes(x = epiweek_symptoms)) +
+      geom_bar(aes(y = denominator, fill = "Total"), stat = "identity", color="black") +
+      geom_bar(aes(y = count, fill = "Experimentan Síntomas"), stat = "identity", color="black") +
+      labs(
         title = "Individuos con los síntomas especificados \n por semana en la Vigilancia de Rutina \n o Vigilancia Intensa",
         x = "Semana",
-        y = "Número de individuos"
+        y = "Número de individuos", 
+        fill=""
       ) +
       scale_fill_manual(values = c("Total" = "grey", "Experimentan Síntomas" = "gold")) +
-      theme_classic()+
+      theme_classic() +
+      theme(
+        legend.position = "top",
+        plot.margin = margin(10, 10, 10, 10)
+      ) +
       scale_x_date(labels = format_date_spanish, limits = as.Date(c(input$date_range_input_tab2[1], input$date_range_input_tab2[2])))
   }, width = 500, height = 300)
+  
+  
+  # Create a percent positivity graph with everything overlaying each other----------------------------------
+  
+  
+  # Render plot based on filtered data
+  output$pct_plot_tab2 <- renderPlot({
+    
+    # Load dataset
+    filtered_agri <- filtered_agri_incidence()
+    
+    # Find column
+    count_pos_column_name_agri <- paste0(input$virus_agri)
+    
+    # For labels
+    virus_labels_agri <- c("sars_cov2_all" = "SARS-CoV-2",
+                           "influenza_all" = "Influenza",
+                           "vsr_all" = "VSR",
+                           "virus_all" = "Todos")
+    selected_virus_label_agri <- virus_labels_agri[[input$virus_agri]]
+    
+    if(is.null(input$symptoms)){
+      
+      # Add new columns
+      filtered_agri$pct_prueba_positiva <- ifelse(filtered_agri$denominator <=0, 0,
+                                                     (filtered_agri[[count_pos_column_name_agri]] / filtered_agri$denominator)*100)
+      
+      filtered_agri$pct_ILI_symptoms <- ifelse(filtered_agri$denominator <=0, 0,
+                                                  (filtered_agri$total_ili_count / filtered_agri$denominator)*100)
+      
+      filtered_agri %>%
+        mutate(epiweek_muestra_funsalud = as.Date(epiweek_muestra_funsalud)) %>%
+        ggplot(aes(x = epiweek_muestra_funsalud)) +
+        geom_bar(aes(y = pct_ILI_symptoms, fill = "Experimentan fiebre, tos, \n o falta de aire"), stat = "identity", color = "black", alpha = 0.5) +
+        geom_bar(aes(y = pct_prueba_positiva, fill = "Primera Prueba Positiva"), stat = "identity", color = "black", alpha = 0.5) +
+        labs(
+          title = paste("Porcentaje de individuos \n por semana en la Vigilancia de Rutina \n o Vigilancia Intensa con", selected_virus_label_agri),
+          x = "Semana",
+          y = "% de individuos", 
+          fill = ""
+        ) +
+        scale_fill_manual(
+          values = c("Experimentan fiebre, tos, \n o falta de aire" = "orange", "Primera Prueba Positiva" = "red"),
+          labels = c("Experimentan fiebre, tos, \n o falta de aire" = "Experimentan fiebre, tos, \n o falta de aire",
+                     "Primera Prueba Positiva" = "Primera Prueba Positiva")
+        ) +
+        theme_classic() +
+        theme(
+          legend.position = "top",
+          plot.margin = margin(10, 10, 10, 10)
+        ) +
+        scale_x_date(labels = format_date_spanish, limits = as.Date(c(input$date_range_input_tab2[1], input$date_range_input_tab2[2])))
+    }
+    
+    else{
+      
+   
+    agri_casa_simptomas_2 <- filtered_data_tab2()
+    
+    
+  # Merge dataset
+    agri_casa_pct_df <- merge(x=agri_casa_simptomas_2, y=filtered_agri, by=c("epiweek_symptoms", "denominator"),
+                             by.y=c("epiweek_muestra_funsalud", "denominator"), all=TRUE)
+    
+    # Add new columns
+    agri_casa_pct_df$pct_prueba_positiva <- ifelse(agri_casa_pct_df$denominator <=0, 0,
+                                                   (agri_casa_pct_df[[count_pos_column_name_agri]] / agri_casa_pct_df$denominator)*100)
+    
+    agri_casa_pct_df$pct_combo_symptoms <- ifelse(agri_casa_pct_df$denominator <=0, 0,
+                                                  (agri_casa_pct_df$count / agri_casa_pct_df$denominator)*100)
+    
+    agri_casa_pct_df$pct_ILI_symptoms <- ifelse(agri_casa_pct_df$denominator <=0, 0,
+                                                (agri_casa_pct_df$total_ili_count / agri_casa_pct_df$denominator)*100)
+
+    agri_casa_pct_df %>%
+      mutate(epiweek_symptoms = as.Date(epiweek_symptoms)) %>%
+      ggplot(aes(x = epiweek_symptoms)) +
+      geom_bar(aes(y = pct_combo_symptoms, fill = "Experimentan Síntomas"), stat = "identity", color = "black", alpha = 0.5) +
+      geom_bar(aes(y = pct_prueba_positiva, fill = "Primera Prueba Positiva"), stat = "identity", color = "black", alpha = 0.5) +
+      labs(
+        title = paste("Porcentaje de individuos \n por semana en la Vigilancia de Rutina \n o Vigilancia Intensa con", selected_virus_label_agri),
+        x = "Semana",
+        y = "% de individuos", 
+        fill = ""
+      ) +
+      scale_fill_manual(
+        values = c("Experimentan Síntomas" = "gold", "Primera Prueba Positiva" = "red"),
+        labels = c("Experimentan Síntomas" = "Experimentan Síntomas",
+                   "Primera Prueba Positiva" = "Primera Prueba Positiva")
+      ) +
+      theme_classic() +
+      theme(
+        legend.position = "top",
+        plot.margin = margin(10, 10, 10, 10)
+      ) +
+      scale_x_date(labels = format_date_spanish, limits = as.Date(c(input$date_range_input_tab2[1], input$date_range_input_tab2[2])))
+    
+  }}, width = 500, height = 300)
+  
 
   # Biofire--------------------------------------------------------------------------
   
