@@ -592,10 +592,18 @@ write.csv(agri_casa_symptoms_summary_anonymized, file = agri_casa_symptom_csv_fi
 # --------------------Prepare BIOFIRE dataset ------------------------------
 # ----------------------------------------------------------------------------
 
+
 # Create epiweek--------------------------------------------------------------
 
 namru_biofire$epiweek_recoleccion <- floor_date(namru_biofire$fecha_recoleccion, unit = "week", week_start = 1)
 
+# Is each individual is currently mentioned once in the dataset?
+nrow(unique(namru_biofire%>%
+              dplyr::filter((! is.na(result_sangre_complt)) | (! is.na(result_hispd_nasof)))%>%
+              select(record_id))
+     )==nrow(namru_biofire%>%
+               dplyr::filter((! is.na(result_sangre_complt)) | (! is.na(result_hispd_nasof)))%>%
+               select(record_id))
 
 # Find columns with pathogen results -----------------------------------------
 # Columns of interest
@@ -648,7 +656,7 @@ columns_of_interest_biofire <- c(
 # Por ahora, excluimos los heces (no son colectados)
 # table(namru_biofire$result_heces)
 
-namru_biofire_summary <- namru_biofire%>%
+namru_biofire_subset <- namru_biofire%>%
   dplyr::select(record_id,
                 #id_agri_lab,
                 #id_agricasa_lab,
@@ -660,6 +668,43 @@ namru_biofire_summary <- namru_biofire%>%
                 result_hispd_nasof,
                 all_of(columns_of_interest_biofire))%>%
   dplyr::filter((! is.na(result_sangre_complt)) | (! is.na(result_hispd_nasof)))
+
+# Clean data to only include NEW cases -----------------------------------------
+# We want to filter out any results where a person was positive the previous three weeks
+# We already have only ONE value per week (the minimum value)
+# We filter because we are only looking at NEW infections
+generate_summary_biofire <- function(data, column) {
+  # Ensure epiweek_recoleccion is in Date format
+  data <- data %>%
+    mutate(epiweek_recoleccion = as.Date(epiweek_recoleccion, origin = "1970-01-01"))
+  
+  # Arrange data by record_id and epiweek_recoleccion
+  data <- data %>%
+    dplyr::arrange(record_id, epiweek_recoleccion)
+  
+  # Create a lagged column to check the value in the previous week
+  data <- data %>%
+    group_by(record_id) %>%
+    mutate(last_record_date = lag(epiweek_recoleccion, order_by = epiweek_recoleccion),
+           last_record_value = lag(.data[[column]], order_by = epiweek_recoleccion),
+           diff_last_record_date = epiweek_recoleccion - last_record_date) %>%
+    ungroup()%>%
+    # Replace a 1 with a 0 if the last_record_date with a 1 in that column occurred less than three weeks ago
+    mutate(!!sym(column) := ifelse(
+      (diff_last_record_date < 21) & (last_record_value==1) & (.data[[column]] == 1), 0, .data[[column]]))
+  
+  return(data)
+}
+
+# Apply the function to each column and combine results into a long dataframe
+# Initialize the result with the original data
+namru_biofire_summary <- namru_biofire_subset
+
+# Loop through each column and apply the generate_summary_biofire function
+for (column in columns_of_interest_biofire) {
+  temp_result <- generate_summary_biofire(namru_biofire_subset, column)
+}
+
 
 # For additional data security, we will re-code participants-----------------------
 
