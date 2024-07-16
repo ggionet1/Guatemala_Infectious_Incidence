@@ -22,3 +22,4 @@ dependencies:
   - r-reactable
   - r-tidyr
   - r-digest
+  - r-patchwork
