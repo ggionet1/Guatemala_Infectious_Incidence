@@ -598,7 +598,7 @@ server <- function(input, output) {
   
   # Get list of column names
   colnames_namru_counts_pre <- colnames(namru_biofire_summary_counts)
-  colnames_namru_counts <- setdiff(colnames_namru_counts, c("epiweek_recoleccion"))
+  colnames_namru_counts <- setdiff(colnames_namru_counts_pre, c("epiweek_recoleccion"))
   colnames_namru_counts_sangre <- grep("^count_patogenos_positivos_sangre", 
                                        colnames_namru_counts, value = TRUE)
   colnames_namru_counts_hisnaso <- grep("^count_patogenos_positivos_hisnaso", 
