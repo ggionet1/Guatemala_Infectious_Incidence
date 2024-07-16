@@ -13,6 +13,7 @@ agri_casa_symptom_summary <- read.csv("https://raw.githubusercontent.com/ggionet
 agri_casa_incidence_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/agri_casa_summary_updated.csv")
 namru_biofire_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/namru_biofire_summary_updated.csv")
 
+
 # Define any needed functions -------------------------
 # Function to format date labels in Spanish
 format_date_spanish <- function(x) {
@@ -545,7 +546,7 @@ server <- function(input, output) {
                      )
   
   # Add negative column
-  namru_biofire_summary_anonymized_wneg <- namru_biofire_summary_anonymized%>%
+  namru_biofire_summary_anonymized_wneg <- namru_biofire_summary%>%
   mutate(Negativo_sangre = ifelse(result_sangre_complt==2, 1, 0), 
          Negativo_hisnaso = ifelse(result_hispd_nasof==2, 1, 0))
   
