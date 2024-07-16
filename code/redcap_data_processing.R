@@ -102,16 +102,18 @@ for (cols in columns_to_iterate) {
 influenza$resul_sars_covid_all <- ifelse(is.na(influenza$resul_sars_all) & is.na(influenza$resul_covid_19_all), NA,
                                          ifelse(is.na(influenza$resul_sars_all) & !is.na(influenza$resul_covid_19_all), influenza$resul_covid_19_all,
                                                 ifelse(is.na(influenza$resul_covid_19_all) & !is.na(influenza$resul_sars_all), influenza$resul_sars_all,
-                                                       min(influenza$resul_covid_19_all, influenza$resul_sars_all))))
+                                                       pmin(influenza$resul_covid_19_all, influenza$resul_sars_all))))
 
 # Create a new column summarizing Influenza
-influenza$resul_inf_all <- ifelse(is.na(influenza$resul_inf_a_all) & is.na(influenza$resul_inf_b_all), NA,
-                                         ifelse(is.na(influenza$resul_inf_a_all) & !is.na(influenza$resul_inf_b_all), influenza$resul_inf_b_all,
-                                                ifelse(!is.na(influenza$resul_inf_a_all) & is.na(influenza$resul_inf_b_all), influenza$resul_inf_a_all,
-                                                       min(influenza$resul_inf_a_all, influenza$resul_inf_b_all))))
+influenza <- influenza%>%
+  dplyr::mutate(resul_inf_all = ifelse(is.na(resul_inf_a_all) & is.na(resul_inf_b_all), NA,
+                                         ifelse(is.na(resul_inf_a_all) & (!is.na(resul_inf_b_all)), resul_inf_b_all,
+                                                ifelse((!is.na(resul_inf_a_all)) & is.na(resul_inf_b_all), resul_inf_a_all,
+                                                       pmin(resul_inf_a_all, resul_inf_b_all, na.rm = TRUE)))))
+
 
 # Create a new column summarizing all viruses together
-influenza$resul_virus_all <- min(influenza$resul_inf_a_all,
+influenza$resul_virus_all <- pmin(influenza$resul_inf_a_all,
                                  influenza$resul_inf_b_all,
                                  influenza$resul_rsv_all,
                                  influenza$resul_sars_all,
@@ -184,7 +186,6 @@ summary_combined <- lapply(columns_to_process, function(col) generate_summary(me
 # Save the summary dataframe -----------------------------------------------
 influenza_csv_file <- "docs/influenza_summary_updated.csv"
 write.csv(summary_combined, file = influenza_csv_file, row.names = FALSE)
-
 
 # ----------------------------------------------------------------------------
 # --------------------Prepare Agri-Casa dataset ------------------------------

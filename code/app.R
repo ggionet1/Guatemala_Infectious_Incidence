@@ -160,8 +160,9 @@ ui_tab1 <- function() {
                           "VSR" = "resul_rsv_all",
                           "SARS-CoV-2 confirmado por PCR" = "resul_sars_all",
                           "SARS-CoV-2 confirmado por prueba rápida de antígenos" = "resul_covid_19_all",
-                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all"),
-                        "Todos" = "resul_virus_all")
+                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all",
+                          "Todos" = "resul_virus_all")
+                        )
     ),
     column(6,
            # Date range input
@@ -286,7 +287,8 @@ server <- function(input, output) {
                       "resul_sars_all" = "SARS-CoV-2 confirmado por PCR",
                       "resul_covid_19_all" = "SARS-CoV-2 confirmado por prueba rápida de antígenos", 
                       "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)",
-                      "resul_virus_all" = "Todos")
+                      "resul_virus_all" = "Todos"
+                      )
     selected_virus_label <- virus_labels[[input$virus]]
     
     filtered%>%
@@ -536,11 +538,10 @@ server <- function(input, output) {
   # Calculate total counts of 1s for each column
   biofire_total_tested_pre <- namru_biofire_summary%>%
     group_by(epiweek_recoleccion)%>%
-    dplyr::summarise(
-        count_sangre_total = max(0,
-                sum(result_sangre_complt==1 | result_sangre_complt==2, na.rm = TRUE)),
-        count_nasof_total = max(0,
-                sum(result_hispd_nasof==1 | result_hispd_nasof==2, na.rm=TRUE))
+    dplyr::summarise(count_sangre_total = max(0,
+                                              sum(result_sangre_complt==1 | result_sangre_complt==2, na.rm = TRUE)),
+                     count_nasof_total = max(0,
+                                             sum(result_hispd_nasof==1 | result_hispd_nasof==2, na.rm=TRUE)),
                      )
   
   # Add negative column
@@ -696,8 +697,8 @@ filtered_biofire_totals_plot_df <- reactive({
   
   # Filter data based on selected date range
   biofire_total_tested_filtered <- subset(biofire_total_tested,
-        epiweek_recoleccion >= input$date_range_input_tab3[1] &
-        epiweek_recoleccion <= input$date_range_input_tab3[2])
+                                          epiweek_recoleccion >= input$date_range_input_tab3[1] &
+                                            epiweek_recoleccion <= input$date_range_input_tab3[2])
   
   biofire_total_tested_filtered
 })
@@ -728,8 +729,8 @@ output$combined_plot_tab3 <- renderPlot({
       y = ""
     ) +
     scale_y_continuous(breaks = seq(0, max(
-                    max(biofire_total_tested_filtered$count_nasof_total, na.rm = TRUE),
-                    max(biofire_total_tested_filtered$count_sangre_total, na.rm = TRUE)
+                                    max(biofire_total_tested_filtered$count_nasof_total, na.rm = TRUE),
+                                    max(biofire_total_tested_filtered$count_sangre_total, na.rm = TRUE)
                                     ),
                                     by = 1)) +
     theme(axis.line = element_blank(), 
