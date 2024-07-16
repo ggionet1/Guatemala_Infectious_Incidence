@@ -5,6 +5,7 @@ library(ggrepel)
 library(dplyr)
 library(shinythemes)
 library(reactable)
+library(tidyr)
 
 
 # Load dataframes ---------

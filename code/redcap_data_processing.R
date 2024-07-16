@@ -12,6 +12,7 @@ install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 install.packages("lubridate", repos = "http://cran.us.r-project.org")
 install.packages("purr", repos = "http://cran.us.r-project.org")
 install.packages("ggrepel", repos = "http://cran.us.r-project.org")
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
 install.packages("dplyr", repos = "http://cran.us.r-project.org")
 install.packages("digest", repos = "http://cran.us.r-project.org")
 
