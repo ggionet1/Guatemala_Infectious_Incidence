@@ -253,10 +253,9 @@ ui <- fluidPage(
   # Main panel content goes here
   tabsetPanel(
     # Define the three tabs
-    tabPanel("Estudio de Influenza", ui_tab1()),
+    tabPanel("Estudio de AGRI", ui_tab1()),
     tabPanel("Estudio AGRI-CASA", ui_tab2()),
-    tabPanel("Estudio NAMRU-Biofire", ui_tab3()),
-    tabPanel("Estudio NAMRU-Biofire", ui_tab4())
+    tabPanel("Estudio NAMRU-Biofire", ui_tab3())
     )
   )
 
@@ -570,7 +569,7 @@ server <- function(input, output) {
   namru_biofire_summary_counts_premerge <- create_individual_summaries(namru_biofire_summary_anonymized_wneg, columns_of_interest_biofire)
   
   # Add totals
-  namru_biofire_summary_counts_pre <- merge(biofire_total_tested, namru_biofire_summary_counts_premerge, by="epiweek_recoleccion", all=TRUE)
+  namru_biofire_summary_counts_pre <- merge(biofire_total_tested_pre, namru_biofire_summary_counts_premerge, by="epiweek_recoleccion", all=TRUE)
   # If epiweek is not recorded, do not count it
   namru_biofire_summary_counts_pre <- namru_biofire_summary_counts_pre %>%
     filter(!is.na(epiweek_recoleccion))
@@ -599,7 +598,7 @@ server <- function(input, output) {
   
   # Get list of column names
   colnames_namru_counts_pre <- colnames(namru_biofire_summary_counts)
-  colnames_namru_counts <- setdiff(colnames_namru_counts, c("epiweek_recoleccion"))
+  colnames_namru_counts <- setdiff(colnames_namru_counts_pre, c("epiweek_recoleccion"))
   colnames_namru_counts_sangre <- grep("^count_patogenos_positivos_sangre", 
                                        colnames_namru_counts, value = TRUE)
   colnames_namru_counts_hisnaso <- grep("^count_patogenos_positivos_hisnaso", 
