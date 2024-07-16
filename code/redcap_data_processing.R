@@ -64,6 +64,8 @@ namru_biofire <-
 # --------------------Prepare Influenza dataset ------------------------------
 # ----------------------------------------------------------------------------
 
+# Looking at muestras from FunSalud Laboratory (only from symptomatic individuals)------------------
+
 # Create epiweek
 influenza$epiweek_recolec <- floor_date(influenza$fecha_recolec, unit = "week", week_start = 1)
 
@@ -99,17 +101,35 @@ for (cols in columns_to_iterate) {
 # Create a new column summarizing SARS and COVID
 influenza$resul_sars_covid_all <- ifelse(is.na(influenza$resul_sars_all) & is.na(influenza$resul_covid_19_all), NA,
                                          ifelse(is.na(influenza$resul_sars_all) & !is.na(influenza$resul_covid_19_all), influenza$resul_covid_19_all,
-                                              ifelse(is.na(influenza$resul_covid_19_all) & !is.na(influenza$resul_sars_all), influenza$resul_sars_all,
-                                                    min(influenza$resul_covid_19_all, influenza$resul_sars_all))))
+                                                ifelse(is.na(influenza$resul_covid_19_all) & !is.na(influenza$resul_sars_all), influenza$resul_sars_all,
+                                                       min(influenza$resul_covid_19_all, influenza$resul_sars_all))))
+
+# Create a new column summarizing Influenza
+influenza$resul_inf_all <- ifelse(is.na(influenza$resul_inf_a_all) & is.na(influenza$resul_inf_b_all), NA,
+                                         ifelse(is.na(influenza$resul_inf_a_all) & !is.na(influenza$resul_inf_b_all), influenza$resul_inf_b_all,
+                                                ifelse(!is.na(influenza$resul_inf_a_all) & is.na(influenza$resul_inf_b_all), influenza$resul_inf_a_all,
+                                                       min(influenza$resul_inf_a_all, influenza$resul_inf_b_all))))
+
+# Create a new column summarizing all viruses together
+influenza$resul_virus_all <- min(influenza$resul_inf_a_all,
+                                 influenza$resul_inf_b_all,
+                                 influenza$resul_rsv_all,
+                                 influenza$resul_sars_all,
+                                 influenza$resul_covid_19_all, na.rm = TRUE)
+
+
+# Next, we want to filter out the samples that are not regularly taken
+# From what I understand,
+# we only want samples taken during the visita sintomática to understand the trends
+
+influenza_muestras <- influenza %>%
+  dplyr::filter(tipo_visita_lab___2==1)
+
 
 # Issue 2: What if the same individual is tested multiple times in the same week?
 # We don't care if the result is the same
 # We do care if one is positive (always prefer the positive value)
 # Since the minimum value is the preferred data type (1 = positve, 2 = negative), select for minimum value
-influenza_by_indiv_by_epiweek <- influenza %>%
-  dplyr::filter(!is.na(resul_inf_a_all)) %>%
-  dplyr::group_by(record_id, epiweek_recolec) %>%
-  dplyr::slice(which.min(resul_inf_a_all))
 
 filter_group_slice <- function(data, column) {
   data %>%
@@ -119,36 +139,25 @@ filter_group_slice <- function(data, column) {
     dplyr::select(c(record_id, epiweek_recolec, column))
 }
 
-columns_to_process <- c("resul_inf_a_all", "resul_rsv_all", "resul_inf_b_all",
-                        "resul_sars_all", "resul_covid_19_all", 
-                        "resul_sars_covid_all")
+columns_to_process <- c("resul_inf_a_all", 
+                        "resul_inf_b_all",
+                        "resul_inf_all",
+                        "resul_rsv_all", 
+                        "resul_sars_all",
+                        "resul_covid_19_all", 
+                        "resul_sars_covid_all",
+                        "resul_virus_all")
 
 # Create a place to store summarized data
 summary_dataframes <- list()
 
 # Apply the function to each column and create new dataframes
 for (col in columns_to_process) {
-  summary_dataframes[[col]] <- filter_group_slice(influenza, col)
+  summary_dataframes[[col]] <- filter_group_slice(influenza_muestras, col)
 }
 
 # Merge all dataframes together so that we have data per person per week
 merged_summary <- Reduce(function(x, y) merge(x, y, by = c("record_id", "epiweek_recolec"), all = TRUE), summary_dataframes)
-
-# Plot a specific disease over time
-influenza_summary <- merged_summary%>%
-  dplyr::group_by(epiweek_recolec)%>%
-  dplyr::summarise(
-    # Count total number of individuals tested per week
-    count_inf_a_all = sum(!is.na(resul_inf_a_all), na.rm = TRUE),
-    # Count total number of negatives per week
-    count_inf_a_neg = sum(resul_inf_a_all == 2, na.rm = TRUE),
-    # Count total number of positives per week
-    count_inf_a_pos = sum(resul_inf_a_all == 1, na.rm = TRUE),
-    # Count percentage of positives to negatives per week
-    pct_inf_a_pos = ifelse(count_inf_a_pos==0, 0,
-                           count_inf_a_pos/sum(count_inf_a_neg+count_inf_a_pos, na.rm=TRUE)*100)
-    
-  )
 
 generate_summary <- function(data, column) {
   data %>%
@@ -165,20 +174,17 @@ generate_summary <- function(data, column) {
     dplyr::mutate(disease = column)
 }
 
-# Columns to process
-columns_to_process <- c("resul_inf_a_all", "resul_rsv_all", "resul_inf_b_all",
-                        "resul_sars_all", "resul_covid_19_all",
-                        "resul_sars_covid_all")
-
 # Apply the function to each column and combine results into a long dataframe
 summary_combined <- lapply(columns_to_process, function(col) generate_summary(merged_summary, col)) %>%
   dplyr::bind_rows()%>%
   tidyr::pivot_wider(names_from = disease,
-              values_from = c(count_all, count_neg, count_pos, pct_pos))
+                     values_from = c(count_all, count_neg, count_pos, pct_pos))
 
-# Save the summary dataframe
+
+# Save the summary dataframe -----------------------------------------------
 influenza_csv_file <- "docs/influenza_summary_updated.csv"
 write.csv(summary_combined, file = influenza_csv_file, row.names = FALSE)
+
 
 # ----------------------------------------------------------------------------
 # --------------------Prepare Agri-Casa dataset ------------------------------
@@ -718,4 +724,6 @@ namru_biofire_summary_anonymized <- namru_biofire_summary %>%
 
 # Save file ---------------------------------------------------
 namru_biofire_csv_file <- "docs/namru_biofire_summary_updated.csv"
+#namru_biofire_csv_file <- "/Users/gabigionet/Library/CloudStorage/OneDrive-UCB-O365/PhD_Projects/Trifinio/Guatemala_Infectious_Incidence/docs/namru_biofire_summary_updated.csv"
+
 write.csv(namru_biofire_summary_anonymized, file = namru_biofire_csv_file, row.names = FALSE)

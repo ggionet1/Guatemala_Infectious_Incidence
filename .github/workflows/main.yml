@@ -67,9 +67,9 @@ jobs:
             git push origin --delete "$branch_name"
           fi
 
-      # - name: Deploy applications
-      #   env:
-      #     r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
-      #     r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
-      #   run: |
-      #     Rscript code/deploy_app.R
+      - name: Deploy applications
+        env:
+          r_shiny_account_token: ${{ secrets.R_SHINY_ACCOUNT_TOKEN }}
+          r_shiny_token: ${{ secrets.R_SHINY_TOKEN }}
+        run: |
+          Rscript code/deploy_app.R
