@@ -57,8 +57,8 @@ pathogen_names <- c(
   "patogenos_positivos_sangre___10" = "Bacillus anthracis",
   "patogenos_positivos_sangre___11" = "Francisella tularensis",
   "patogenos_positivos_sangre___12" = "Leptospira spp.",
-  "patogenos_positivos_sangre___13" = "Salmonella enterica serovar Typhi",
-  "patogenos_positivos_sangre___14" = "Salmonella enterica serovar Paratyphi A",
+  "patogenos_positivos_sangre___13" = "Salmonella enterica, Typhi",
+  "patogenos_positivos_sangre___14" = "Salmonella enterica, Paratyphi A",
   "patogenos_positivos_sangre___15" = "Yersinia pestis",
   "patogenos_positivos_sangre___16" = "Leishmania spp.",
   "patogenos_positivos_sangre___17" = "Plasmodium spp.",
@@ -84,8 +84,64 @@ pathogen_names <- c(
   "patogenos_positivos_hisnaso___18" = "Bordetella pertussis",
   "patogenos_positivos_hisnaso___19" = "Chlamydophila pneumonia",
   "patogenos_positivos_hisnaso___20" = "Mycoplasma pneumoniae",
-  "patogenos_positivos_hisnaso___21" = "Severe Acute Respiratory Syndrome Coronavirus 2 (SARS-CoV-2)"
+  "patogenos_positivos_hisnaso___21" = "SARS-CoV-2",
+  "Negativo_sangre" = "Negativo",
+  "Negativo_hisnaso" = "Negativo"
 )
+
+columns_of_interest_biofire <- c(
+  "patogenos_positivos_sangre___1",
+  "patogenos_positivos_sangre___2",
+  "patogenos_positivos_sangre___3",
+  "patogenos_positivos_sangre___4",
+  "patogenos_positivos_sangre___5",
+  "patogenos_positivos_sangre___6",
+  "patogenos_positivos_sangre___7",
+  "patogenos_positivos_sangre___8",
+  "patogenos_positivos_sangre___9",
+  "patogenos_positivos_sangre___10",
+  "patogenos_positivos_sangre___11",
+  "patogenos_positivos_sangre___12",
+  "patogenos_positivos_sangre___13",
+  "patogenos_positivos_sangre___14",
+  "patogenos_positivos_sangre___15",
+  "patogenos_positivos_sangre___16",
+  "patogenos_positivos_sangre___17",
+  "patogenos_positivos_sangre___18",
+  "patogenos_positivos_sangre___19",
+  "patogenos_positivos_hisnaso___1",
+  "patogenos_positivos_hisnaso___2",
+  "patogenos_positivos_hisnaso___3",
+  "patogenos_positivos_hisnaso___4",
+  "patogenos_positivos_hisnaso___5",
+  "patogenos_positivos_hisnaso___6",
+  "patogenos_positivos_hisnaso___7",
+  "patogenos_positivos_hisnaso___8",
+  "patogenos_positivos_hisnaso___9",
+  "patogenos_positivos_hisnaso___10",
+  "patogenos_positivos_hisnaso___11",
+  "patogenos_positivos_hisnaso___12",
+  "patogenos_positivos_hisnaso___13",
+  "patogenos_positivos_hisnaso___14",
+  "patogenos_positivos_hisnaso___15",
+  "patogenos_positivos_hisnaso___16",
+  "patogenos_positivos_hisnaso___17",
+  "patogenos_positivos_hisnaso___18",
+  "patogenos_positivos_hisnaso___19",
+  "patogenos_positivos_hisnaso___20",
+  "patogenos_positivos_hisnaso___21",
+  "Negativo_sangre",
+  "Negativo_hisnaso"
+)
+
+# Create list without negatives separated by sample type
+columns_sangre <- columns_of_interest_biofire[grep("sangre",
+                                                   columns_of_interest_biofire)]
+columns_sangre <- columns_sangre[columns_sangre != "Negativo_sangre"]
+
+columns_hisnaso <- columns_of_interest_biofire[grep("hisnaso",
+                                                    columns_of_interest_biofire)]
+columns_hisnaso <- columns_hisnaso[columns_hisnaso != "Negativo_hisnaso"]
 
 
 # ------------------------------------------------------
@@ -100,14 +156,16 @@ ui_tab1 <- function() {
            radioButtons("virus", "Virus:",
                         c("Influenza A" = "resul_inf_a_all",
                           "Influenza B" = "resul_inf_b_all",
+                          "Influenza (todos)" = "resul_inf_all",
                           "VSR" = "resul_rsv_all",
                           "SARS-CoV-2 confirmado por PCR" = "resul_sars_all",
                           "SARS-CoV-2 confirmado por prueba rápida de antígenos" = "resul_covid_19_all",
-                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all"))
+                          "SARS-CoV-2 (confirmado por PCR o prueba rápida)" = "resul_sars_covid_all"),
+                        "Todos" = "resul_virus_all")
     ),
     column(6,
            # Date range input
-           dateRangeInput("date_range_input_tab1", "Select Date Range:",
+           dateRangeInput("date_range_input_tab1", "Elige las fechas:",
                           start = "2020-01-01", end = Sys.Date())
     ),
     column(12,
@@ -159,20 +217,26 @@ ui_tab2 <- function() {
 ui_tab3 <- function() { 
   fluidPage(
     titlePanel("Enfermedades Detectadas por Namru/Biofire"),
-    sidebarLayout(
-      sidebarPanel(
-        selectInput("tab3_time_filter", "Ver cuantas enfermedades diferentes fueron detectadas:",
-                    choices = c("En el mes pasado" = "month",
-                                "En los 6 meses pasados" = "6months",
-                                "En 1 año pasado" = "year",
-                                "En la historia de nuestro estudio" = "all"),
-                    selected = "all")
-      ),
-      mainPanel(
-        reactableOutput("table_tab3")
-      )
-    )
+    fluidRow(column=6,
+      # Date range input
+      dateRangeInput("date_range_input_tab3", "Elige las fechas:",
+                     start = "2020-06-29", end = Sys.Date()),
+      column(12, reactableOutput("table_tab3")),
+      column(12, plotOutput("combined_plot_tab3"))
+        ),
   )
+}
+
+# Define UI for Tab 4
+ui_tab4 <- function() { 
+  fluidPage(
+    titlePanel("Todos Datos"),
+    fluidRow(column=6,
+             # Date range input
+             dateRangeInput("date_range_input_tab3", "Elige las fechas:",
+                            start = "2020-06-29", end = Sys.Date()))
+             
+    )
 }
 
 # Define UI for application
@@ -189,9 +253,10 @@ ui <- fluidPage(
     # Define the three tabs
     tabPanel("Estudio de Influenza", ui_tab1()),
     tabPanel("Estudio AGRI-CASA", ui_tab2()),
-    tabPanel("Estudio NAMRU-Biofire", ui_tab3())
+    tabPanel("Estudio NAMRU-Biofire", ui_tab3()),
+    tabPanel("Estudio NAMRU-Biofire", ui_tab4())
+    )
   )
-)
 
 
 # Define server logic ----
@@ -216,10 +281,12 @@ server <- function(input, output) {
     
     virus_labels <- c("resul_inf_a_all" = "Influenza A",
                       "resul_inf_b_all" = "Influenza B",
+                      "resul_inf_all" = "Influenza (todos)",
                       "resul_rsv_all" = "VSR",
                       "resul_sars_all" = "SARS-CoV-2 confirmado por PCR",
                       "resul_covid_19_all" = "SARS-CoV-2 confirmado por prueba rápida de antígenos", 
-                      "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)" )
+                      "resul_sars_covid_all" = "SARS-CoV-2 (confirmado por PCR o prueba rápida)",
+                      "resul_virus_all" = "Todos")
     selected_virus_label <- virus_labels[[input$virus]]
     
     filtered%>%
@@ -227,8 +294,8 @@ server <- function(input, output) {
                     count_all_column_name = ifelse(is.na(count_all_column_name), 0, count_all_column_name)
       )%>%
       ggplot(aes(x = epiweek_recolec_date)) +
-      geom_bar(aes(y = .data[[count_all_column_name]], fill = "Total"), stat = "identity") +
-      geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Prueba Positiva"), stat = "identity") +
+      geom_bar(aes(y = .data[[count_all_column_name]], fill = "Total"), stat = "identity", color="black") +
+      geom_bar(aes(y = .data[[count_pos_column_name]], fill = "Prueba Positiva"), stat = "identity", color="black") +
       scale_fill_manual(values = c("Total" = "grey", "Prueba Positiva" = "red")) +
       #geom_text_repel(
       #  aes(y = .data[[count_all_column_name]], 
@@ -461,32 +528,294 @@ server <- function(input, output) {
     
   }}, width = 500, height = 300)
   
+  # --------------------------------------------------------------------------
+  #                             BIOFIRE
+  # --------------------------------------------------------------------------
+  
+  # Count the number of positive and negative results for each
+  # Calculate total counts of 1s for each column
+  biofire_total_tested_pre <- namru_biofire_summary%>%
+    group_by(epiweek_recoleccion)%>%
+    dplyr::summarise(
+        count_sangre_total = max(0,
+                sum(result_sangre_complt==1 | result_sangre_complt==2, na.rm = TRUE)),
+        count_nasof_total = max(0,
+                sum(result_hispd_nasof==1 | result_hispd_nasof==2, na.rm=TRUE))
+                     )
+  
+  # Add negative column
+  namru_biofire_summary_anonymized_wneg <- namru_biofire_summary_anonymized%>%
+  mutate(Negativo_sangre = ifelse(result_sangre_complt==2, 1, 0), 
+         Negativo_hisnaso = ifelse(result_hispd_nasof==2, 1, 0))
+  
+  # Function to create summary dataset for specified columns
+  create_individual_summaries <- function(data, columns_to_summarize) {
+    summaries <- lapply(columns_to_summarize, function(column) {
+      summary <- data %>%
+        group_by(epiweek_recoleccion) %>%
+        summarise(count = sum(.data[[column]] == 1, na.rm = TRUE))
+      names(summary)[2] <- paste("count_", column, sep="")
+      return(summary)
+    })
+    
+    # Merge summaries into one dataframe
+    summary_data <- Reduce(function(x, y) full_join(x, y, by = "epiweek_recoleccion"), summaries)
+    
+    return(summary_data)
+  }
+  
+  # Apply counting positive tests by week to all columns of interest
+  namru_biofire_summary_counts_premerge <- create_individual_summaries(namru_biofire_summary_anonymized_wneg, columns_of_interest_biofire)
+  
+  # Add totals
+  namru_biofire_summary_counts_pre <- merge(biofire_total_tested, namru_biofire_summary_counts_premerge, by="epiweek_recoleccion", all=TRUE)
+  # If epiweek is not recorded, do not count it
+  namru_biofire_summary_counts_pre <- namru_biofire_summary_counts_pre %>%
+    filter(!is.na(epiweek_recoleccion))
+  
+  # ISSUE: Including all weeks despite sparse testing
+  # Not all weeks are included, so we need to make a list of all Epiweeks and merge into dataset
+  # Define start and end dates
+  start_date <- as.Date("2020-06-29")
+  end_date <- Sys.Date()
+  # Generate sequence of dates from start to end
+  all_dates <- seq(start_date, end_date, by = "1 day")
+  # Filter for Mondays
+  mondays <- all_dates[format(all_dates, "%A") == "Monday"]
+  # Convert to format "YYYY-MM-DD"
+  mondays <- format(mondays, "%Y-%m-%d")
+  all_epiweeks <- tibble("epiweek_recoleccion" = mondays)
+  namru_biofire_summary_counts <- merge(namru_biofire_summary_counts_pre,
+                                        all_epiweeks, by="epiweek_recoleccion", all=TRUE)
+  # Every time there is an NA in the dataset (because we just added a date in), replace with a 0
+  namru_biofire_summary_counts[is.na(namru_biofire_summary_counts)] <- 0
+  # Do same thing with all tests
+  biofire_total_tested <- merge(biofire_total_tested_pre,
+                                        all_epiweeks, by="epiweek_recoleccion", all=TRUE)
+  # Every time there is an NA in the dataset (because we just added a date in), replace with a 0
+  biofire_total_tested[is.na(biofire_total_tested)] <- 0
+  
+  # Get list of column names
+  colnames_namru_counts_pre <- colnames(namru_biofire_summary_counts)
+  colnames_namru_counts <- setdiff(colnames_namru_counts, c("epiweek_recoleccion"))
+  colnames_namru_counts_sangre <- grep("^count_patogenos_positivos_sangre", 
+                                       colnames_namru_counts, value = TRUE)
+  colnames_namru_counts_hisnaso <- grep("^count_patogenos_positivos_hisnaso", 
+                                        colnames_namru_counts, value = TRUE)
+  colnames_namru_counts_wtotals <- setdiff(colnames_namru_counts, c("epiweek_recoleccion",
+                                                                    "count_sangre_total",
+                                                                    "count_nasof_total"))
+  colnames_namru_counts_wtotals_wneg <- setdiff(colnames_namru_counts, c("epiweek_recoleccion",
+                                                                    "count_sangre_total",
+                                                                    "count_nasof_total",
+                                                                    "count_Negativo_sangre",
+                                                                    "count_Negativo_hisnaso"))
+  
 
-  # Biofire--------------------------------------------------------------------------
-  
+  # Define reactive expression to filter and transform data
   filtered_biofire_data <- reactive({
-    time_period <- switch(input$tab3_time_filter,
-                          month = 30,
-                          `6months` = 180,
-                          year = 365,
-                          all = 99999)
+    # Filter data based on selected date range
+    namru_biofire_summary_counts_filtered <- subset(namru_biofire_summary_counts,
+                                                    epiweek_recoleccion >= input$date_range_input_tab3[1] &
+                                                      epiweek_recoleccion <= input$date_range_input_tab3[2])
     
-    cutoff_date <- Sys.Date() - time_period
+    # Perform data transformation as needed
+    namru_long_data <- namru_biofire_summary_counts_filtered %>%
+      pivot_longer(cols = colnames_namru_counts_wtotals_wneg, 
+                   names_to = "pathogen_code", 
+                   values_to = "count",
+                   values_drop_na = TRUE) %>%
+      mutate(pathogen_code = recode(pathogen_code, !!!setNames(names(pathogen_names), paste0("count_", names(pathogen_names)))),
+    `Patógeno` = pathogen_names[as.character(pathogen_code)],
+    `Todas pruebas de sangre` = count_sangre_total,
+    `Todas pruebas naso/orofaríngeo` = count_nasof_total,
+    `Tipo de Muestra` = case_when(
+      grepl("sangre", pathogen_code, ignore.case = TRUE) ~ "Sangre",
+      grepl("hisnaso", pathogen_code, ignore.case = TRUE) ~ "Naso/orofaríngeo",
+      TRUE ~ NA_character_)) %>%
+    dplyr::select(-c("count_sangre_total", "count_nasof_total"))
     
-    namru_biofire_filtered <- namru_biofire_summary %>%
-      filter(Semana.más.reciente.con.resultado.positivo >= cutoff_date)
+    namru_biofire_filtered_df <- namru_long_data %>%
+      group_by(Patógeno)%>%
+      dplyr::summarize(
+        `# Personas Positivas` = sum(count, na.rm=TRUE),
+        `Tipo de Muestra` = `Tipo de Muestra`)%>%
+      slice(1)
     
-    as.data.frame(namru_biofire_filtered)%>%
-      select(Patógeno, `# Personas` = Numero.de.personas,
-             `Tipo de Muestra` = Tipo.de.Muestra,
-             `Semana más reciente \n con resultado \n positivo` = Semana.más.reciente.con.resultado.positivo)
+    biofire_total_counts_sangre <- sum(namru_biofire_summary_counts_filtered$count_sangre_total,
+                                       na.rm=TRUE)
+    biofire_total_counts_nasof <- sum(namru_biofire_summary_counts_filtered$count_nasof_total,
+                                       na.rm=TRUE)
+    
+    namru_biofire_filtered_df$`Todas Personas Probadas` <- ifelse(
+      namru_biofire_filtered_df$`Tipo de Muestra`=="Sangre",
+      biofire_total_counts_sangre,
+      ifelse(
+        namru_biofire_filtered_df$`Tipo de Muestra`=="Naso/orofaríngeo",
+        biofire_total_counts_nasof, NA))
+    
+  namru_biofire_filtered_df
   })
+
+# Render the table using reactable
+output$table_tab3 <- renderReactable({
+  reactable(filtered_biofire_data())
+})
   
-  output$table_tab3 <- renderReactable({
-    reactable(filtered_biofire_data())
-  })
+  # Create graphs ----------------------------------------------------------------
+
+# Prepare Sample Count Data -----------------------------------------
+# Define reactive expression to filter and transform data
+filtered_biofire_plot_df <- reactive({
+  # Filter data based on selected date range
+  namru_biofire_summary_counts_filtered <- subset(namru_biofire_summary_counts,
+                                                  epiweek_recoleccion >= input$date_range_input_tab3[1] &
+                                                    epiweek_recoleccion <= input$date_range_input_tab3[2])
   
+  # Perform data transformation as needed
+  namru_long_data <- namru_biofire_summary_counts_filtered %>%
+    pivot_longer(cols = c(colnames_namru_counts_wtotals, count_Negativo_sangre, count_Negativo_hisnaso), 
+                 names_to = "pathogen_code", 
+                 values_to = "count",
+                 values_drop_na = TRUE) %>%
+    mutate(pathogen_code = recode(pathogen_code, !!!setNames(names(pathogen_names), paste0("count_", names(pathogen_names)))),
+           `Patógeno` = pathogen_names[as.character(pathogen_code)],
+           `Todas pruebas de sangre` = count_sangre_total,
+           `Todas pruebas naso/orofaríngeo` = count_nasof_total,
+           `Tipo de Muestra` = case_when(
+             grepl("sangre", pathogen_code, ignore.case = TRUE) ~ "Sangre",
+             grepl("hisnaso", pathogen_code, ignore.case = TRUE) ~ "Naso/orofaríngeo",
+             TRUE ~ NA_character_)) %>%
+    dplyr::select(-c("count_sangre_total", "count_nasof_total"))
   
+  namru_long_data
+})
+
+# Create overall count ----------------------------
+filtered_biofire_totals_plot_df <- reactive({
+  
+  # Filter data based on selected date range
+  biofire_total_tested_filtered <- subset(biofire_total_tested,
+        epiweek_recoleccion >= input$date_range_input_tab3[1] &
+        epiweek_recoleccion <= input$date_range_input_tab3[2])
+  
+  biofire_total_tested_filtered
+})
+
+# Create plot -------------------------------------
+# Render plot based on filtered data
+output$combined_plot_tab3 <- renderPlot({
+  
+  # Plot total number of tests
+  # Get filtered totals data
+  biofire_total_tested_filtered <- filtered_biofire_totals_plot_df()
+  
+  # Plot for total tests
+  total_biofire_test_plot <- biofire_total_tested_filtered %>%
+    mutate(epiweek_recoleccion = as.Date(epiweek_recoleccion))%>%
+    ggplot() +
+    geom_bar(aes(x = epiweek_recoleccion, y = count_nasof_total),
+             stat = "identity",  fill = "royalblue", alpha=0.6, color="black", size = 0.3) +
+    geom_bar(aes(x = epiweek_recoleccion, y = count_sangre_total),
+             fill = "red", stat = "identity", alpha=0.6, color="black", size = 0.3) +
+    theme_classic() +
+    labs(
+      title = "\n
+      \n
+      \n
+      Número de personas probadas por semana",
+      x = "",
+      y = ""
+    ) +
+    scale_y_continuous(breaks = seq(0, max(
+                    max(biofire_total_tested_filtered$count_nasof_total, na.rm = TRUE),
+                    max(biofire_total_tested_filtered$count_sangre_total, na.rm = TRUE)
+                                    ),
+                                    by = 1)) +
+    theme(axis.line = element_blank(), 
+          plot.title = element_text(size = 12, face = "bold", hjust=0.5),  # Adjust title size and style
+          axis.title.y = element_text(angle = 0, vjust = 0.5,face = "bold", margin = margin(r = -30)),
+          axis.text.x = element_text(size = 12),
+          axis.text.y = element_text(size = 12, angle = 0, hjust = 1)  # Adjusted y-axis text size
+          #axis.text.x = element_blank(),
+          #axis.ticks.x = element_blank()
+          )+
+    scale_x_date(
+      labels = format_date_spanish,
+      limits = as.Date(c(input$date_range_input_tab3[1], input$date_range_input_tab3[2])),
+      expand = c(0, 0)  # Remove extra space at ends
+    )  
+  
+  # Get filtered data for both Sangre and Naso/orofaríngeo
+  filtered_data <- filtered_biofire_plot_df() %>%
+    mutate(epiweek_recoleccion = as.Date(epiweek_recoleccion))
+  
+  # Define colors for each Tipo de Muestra
+  color_palette <- c("Naso/orofaríngeo (7)" = "#1e214e",
+                     "Naso/orofaríngeo (5)" = "#271c8a",
+                     "Naso/orofaríngeo (4)" = "#3706c0",
+                     "Naso/orofaríngeo (3)" = "#5339d1",
+                     "Naso/orofaríngeo (2)" = "#7599eb",
+                     "Naso/orofaríngeo (1)" = "lightblue",
+                     "Naso/orofaríngeo (0)" = "white",
+                     "Sangre (0)" = "white",
+                     "Sangre (1)" = "#fe8181",
+                     "Sangre (2)" = "#fe5757",
+                     "Sangre (3)" = "#fe2e2e",
+                     "Sangre (4)" = "#cb2424",
+                     "Sangre (5)" = "#b62020")
+  
+  # Convert color_palette to a dataframe
+  color_palette_df <- data.frame(
+    category = names(color_palette),
+    color = as.character(color_palette),
+    stringsAsFactors = FALSE
+  )
+  
+  filtered_data$forColor <-
+    factor(paste0(filtered_data$`Tipo de Muestra`, " (", filtered_data$count , ")"))
+
+    # Create a single ggplot object
+    tile_plot <- filtered_data %>%
+      arrange(`Tipo de Muestra`) %>%
+      ggplot(aes(x = epiweek_recoleccion, y = forcats::fct_relevel(`Patógeno`, "Negativo"))) +
+      geom_tile(aes(fill = forColor), color='black') +
+      facet_wrap(~ `Tipo de Muestra`, ncol = 1, scales = "free_y") +  # Facet by Tipo de Muestra
+      labs(
+        title="Número de personas con un dado resultado",
+        x = "Semana",
+        y = "",
+        fill= ""
+      ) +
+      theme_classic() +
+      scale_x_date(
+        labels = format_date_spanish,
+        limits = as.Date(c(input$date_range_input_tab3[1], input$date_range_input_tab3[2])),
+        expand = c(0, 0)  # Remove extra space at ends
+      ) +
+      #scale_fill_gradient(low = "#FFFFFF", high = "#FF0000")+
+      theme(
+        legend.position = "right",
+        plot.title = element_text(size = 12, face = "bold", hjust=0.5),  # Adjust title size and style
+        plot.margin = margin(0, 0, 0, 0),
+        panel.background = element_rect(fill = 'white'),
+        axis.line = element_blank(), 
+        axis.text.x = element_text(size = 12),
+        plot.background = element_rect(fill = 'white'),
+        strip.text = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5, face = "bold", margin = margin(r = -10)),
+        axis.text.y = element_text(size = 12, angle = 0, hjust = 1)  # Adjusted y-axis text size and color
+      )+
+      scale_fill_manual(values = color_palette_df$color, breaks = color_palette_df$category)
+  
+    # Add the total count to the top of the chart
+    combined_plot <- total_biofire_test_plot / tile_plot + plot_layout(heights = c(1, 3), widths = c(1, 1))
+    
+    # Display the combined plot with specified width and height
+    combined_plot
+}, height = 900, width = 875) 
+
+
 }
 
 shinyApp(ui, server)
