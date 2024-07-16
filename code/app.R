@@ -6,7 +6,7 @@ library(dplyr)
 library(shinythemes)
 library(reactable)
 library(tidyr)
-
+library(patchwork)
 
 # Load dataframes ---------
 influenza_summary <- read.csv("https://raw.githubusercontent.com/ggionet1/Guatemala_Infectious_Incidence/main/docs/influenza_summary_updated.csv")
